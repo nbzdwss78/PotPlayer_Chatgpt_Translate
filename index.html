@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PotPlayer ChatGPT 辅助面板</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0e1117;
+      --bg-card: rgba(17, 24, 39, 0.75);
+      --bg-card-light: rgba(255, 255, 255, 0.85);
+      --fg: #e6edf3;
+      --fg-dark: #0f172a;
+      --accent: #4f46e5;
+      --accent-soft: rgba(79, 70, 229, 0.12);
+      --border: rgba(148, 163, 184, 0.35);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, rgba(79, 70, 229, 0.15), transparent 50%),
+        radial-gradient(circle at bottom, rgba(236, 72, 153, 0.1), transparent 45%),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.7));
+      background-color: #0f172a;
+      color: var(--fg);
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: clamp(16px, 5vw, 48px);
+    }
+
+    header {
+      width: min(1080px, 95vw);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: clamp(24px, 5vw, 48px);
+      padding: clamp(16px, 3vw, 32px);
+      border-radius: 28px;
+      backdrop-filter: blur(18px);
+      background: linear-gradient(135deg, rgba(79, 70, 229, 0.28), rgba(30, 64, 175, 0.12));
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.55);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: clamp(26px, 4vw, 38px);
+      font-weight: 700;
+    }
+
+    header p {
+      margin: 6px 0 0;
+      line-height: 1.6;
+      max-width: 540px;
+      font-size: clamp(14px, 2.5vw, 16px);
+      color: rgba(226, 232, 240, 0.85);
+    }
+
+    main {
+      width: min(1080px, 95vw);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: clamp(18px, 3vw, 28px);
+    }
+
+    .panel {
+      position: relative;
+      padding: clamp(18px, 3vw, 28px);
+      border-radius: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.45);
+    }
+
+    .panel.light {
+      background: var(--bg-card-light);
+      color: var(--fg-dark);
+      border-color: rgba(148, 163, 184, 0.25);
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: clamp(20px, 3vw, 24px);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .panel h2 span {
+      font-size: 24px;
+    }
+
+    .panel p {
+      margin: 0 0 16px;
+      line-height: 1.6;
+      font-size: 15px;
+      color: rgba(226, 232, 240, 0.8);
+    }
+
+    .panel.light p {
+      color: rgba(15, 23, 42, 0.75);
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 8px;
+      color: rgba(226, 232, 240, 0.82);
+    }
+
+    .panel.light label {
+      color: rgba(30, 41, 59, 0.8);
+    }
+
+    input[type="text"], input[type="url"], textarea, select {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.4);
+      color: inherit;
+      font-size: 15px;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+      box-sizing: border-box;
+    }
+
+    .panel.light input[type="text"], .panel.light input[type="url"], .panel.light textarea, .panel.light select {
+      background: rgba(255, 255, 255, 0.8);
+      color: var(--fg-dark);
+    }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px dashed rgba(148, 163, 184, 0.45);
+      background: rgba(15, 23, 42, 0.2);
+      color: rgba(226, 232, 240, 0.85);
+      cursor: pointer;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button.secondary {
+      background: rgba(148, 163, 184, 0.25);
+      color: inherit;
+    }
+
+    button.danger {
+      background: linear-gradient(135deg, #f97316, #ef4444);
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    button:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(99, 102, 241, 0.35);
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .status-log {
+      font-size: 14px;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      max-height: 320px;
+      overflow-y: auto;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.3);
+    }
+
+    .panel.light .status-log {
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .portrait-wrapper {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 12px;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px dashed rgba(148, 163, 184, 0.35);
+      min-height: 240px;
+      background: rgba(15, 23, 42, 0.4);
+    }
+
+    .portrait-wrapper img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .portrait-fallback {
+      text-align: center;
+      color: rgba(226, 232, 240, 0.6);
+      font-size: 14px;
+      padding: 24px 12px;
+    }
+
+    .yolo-preview {
+      display: grid;
+      gap: 16px;
+    }
+
+    .yolo-canvas-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.25);
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(99, 102, 241, 0.22);
+      font-size: 13px;
+    }
+
+    .chip strong {
+      margin-right: 4px;
+    }
+
+    footer {
+      margin-top: clamp(32px, 6vw, 48px);
+      text-align: center;
+      color: rgba(226, 232, 240, 0.55);
+      font-size: 13px;
+    }
+
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .portrait-wrapper {
+        min-height: 200px;
+      }
+    }
+
+    @media (prefers-color-scheme: light) {
+      body {
+        background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.85));
+        color: #0f172a;
+      }
+
+      header {
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(129, 140, 248, 0.1));
+        color: inherit;
+      }
+
+      .panel {
+        background: rgba(255, 255, 255, 0.82);
+        color: #0f172a;
+        border-color: rgba(148, 163, 184, 0.3);
+      }
+
+      .status-log {
+        background: rgba(248, 250, 252, 0.8);
+        color: inherit;
+      }
+
+      label {
+        color: rgba(30, 41, 59, 0.88);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>PotPlayer ChatGPT 云端助手</h1>
+      <p>
+        将前端整合成单一 <code>index.html</code> 方便部署至 Cloudflare Pages。服务端仅负责高负载的语音识别与 YOLO 目标检测，
+        其余交互均在浏览器端完成。可在同目录放置立绘与背景资源，让页面更具个性化。
+      </p>
+    </div>
+    <div class="portrait-wrapper">
+      <img id="character-portrait" src="./character.png" alt="助手立绘"
+           onerror="this.style.display='none';document.getElementById('portrait-fallback').style.display='block';" />
+      <div id="portrait-fallback" class="portrait-fallback" style="display:none;">
+        将立绘文件（如 <code>character.png</code>）放在与 <code>index.html</code> 相同的目录即可在此显示。
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel light" aria-labelledby="connection-title">
+      <h2 id="connection-title"><span>🔗</span> 服务端连接</h2>
+      <p>配置 Cloudflare Pages 前端要访问的后端地址。设置会存储在浏览器的 <code>localStorage</code> 中。</p>
+      <div class="controls">
+        <div>
+          <label for="base-url">后端基地址</label>
+          <input id="base-url" type="url" placeholder="https://your-api.example.com" autocomplete="url" />
+        </div>
+        <div>
+          <label for="speech-endpoint">语音识别 Endpoint</label>
+          <input id="speech-endpoint" type="text" placeholder="/speech/transcribe" />
+        </div>
+        <div>
+          <label for="yolo-endpoint">YOLO 检测 Endpoint</label>
+          <input id="yolo-endpoint" type="text" placeholder="/vision/yolo" />
+        </div>
+        <div>
+          <label for="api-key">可选的 API Key（会保存在浏览器）</label>
+          <input id="api-key" type="text" placeholder="如果后端需要鉴权可填入" autocomplete="off" />
+        </div>
+        <div class="chip-group">
+          <span class="chip"><strong>POST</strong> 语音：FormData { file }</span>
+          <span class="chip"><strong>POST</strong> YOLO：FormData { file, confidence? }</span>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button id="save-settings" type="button">💾 保存设置</button>
+          <button id="reset-settings" type="button" class="secondary">♻️ 恢复默认</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="speech-title">
+      <h2 id="speech-title"><span>🗣️</span> 语音识别</h2>
+      <p>上传音频或直接录制，通过后端 Whisper / Paraformer 等模型进行识别。</p>
+      <div class="controls">
+        <div>
+          <label for="speech-file">上传音频文件</label>
+          <input id="speech-file" type="file" accept="audio/*,video/*" />
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button id="send-speech" type="button">🚀 发送识别请求</button>
+          <button id="record-toggle" type="button" class="secondary">🎙️ 开始录音</button>
+          <button id="cancel-speech" type="button" class="danger" disabled>⛔ 取消进行中的请求</button>
+        </div>
+        <div>
+          <label for="speech-result">识别结果</label>
+          <textarea id="speech-result" placeholder="识别文本将在此展示" readonly></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="yolo-title">
+      <h2 id="yolo-title"><span>🛰️</span> YOLO 目标检测</h2>
+      <p>上传图片或视频帧，由后端返回检测框。若后端直接返回绘制好的图片，也会自动展示。</p>
+      <div class="controls">
+        <div>
+          <label for="yolo-file">上传图片 / 视频帧</label>
+          <input id="yolo-file" type="file" accept="image/*" />
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button id="send-yolo" type="button">🛰️ 发送检测请求</button>
+          <button id="cancel-yolo" type="button" class="danger" disabled>⛔ 取消进行中的请求</button>
+        </div>
+        <div>
+          <label>检测结果</label>
+          <div class="yolo-preview">
+            <div class="yolo-canvas-wrapper">
+              <canvas id="yolo-canvas" aria-label="目标检测预览画布"></canvas>
+            </div>
+            <img id="yolo-image" alt="后端返回的检测图片" style="display:none;border-radius:20px;border:1px solid rgba(148,163,184,0.35);" />
+            <div id="yolo-detections" class="status-log" style="max-height:200px;">
+              等待上传图片后开始检测……
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel light" aria-labelledby="log-title">
+      <h2 id="log-title"><span>📜</span> 状态日志</h2>
+      <p>实时展示请求的进度与调试信息，便于排查网络或鉴权问题。</p>
+      <div id="status-log" class="status-log" aria-live="polite">准备就绪，尚未发起请求。</div>
+    </section>
+  </main>
+
+  <footer>
+    构建为单文件页面，可直接部署至 Cloudflare Pages。请确保同目录下资源可被静态托管。
+  </footer>
+
+  <script>
+    const dom = {
+      baseUrl: document.getElementById('base-url'),
+      speechEndpoint: document.getElementById('speech-endpoint'),
+      yoloEndpoint: document.getElementById('yolo-endpoint'),
+      apiKey: document.getElementById('api-key'),
+      saveSettings: document.getElementById('save-settings'),
+      resetSettings: document.getElementById('reset-settings'),
+      speechFile: document.getElementById('speech-file'),
+      sendSpeech: document.getElementById('send-speech'),
+      cancelSpeech: document.getElementById('cancel-speech'),
+      recordToggle: document.getElementById('record-toggle'),
+      speechResult: document.getElementById('speech-result'),
+      yoloFile: document.getElementById('yolo-file'),
+      sendYolo: document.getElementById('send-yolo'),
+      cancelYolo: document.getElementById('cancel-yolo'),
+      yoloCanvas: document.getElementById('yolo-canvas'),
+      yoloImage: document.getElementById('yolo-image'),
+      yoloDetections: document.getElementById('yolo-detections'),
+      statusLog: document.getElementById('status-log'),
+    };
+
+    const STORAGE_KEY = 'potplayer-cloudflare-settings';
+    const DEFAULT_SETTINGS = {
+      baseUrl: '',
+      speechEndpoint: '/speech/transcribe',
+      yoloEndpoint: '/vision/yolo',
+      apiKey: '',
+    };
+
+    let speechController = null;
+    let yoloController = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+
+    function loadSettings() {
+      try {
+        const settings = JSON.parse(localStorage.getItem(STORAGE_KEY)) || DEFAULT_SETTINGS;
+        Object.assign(DEFAULT_SETTINGS, settings);
+        dom.baseUrl.value = settings.baseUrl ?? DEFAULT_SETTINGS.baseUrl;
+        dom.speechEndpoint.value = settings.speechEndpoint ?? DEFAULT_SETTINGS.speechEndpoint;
+        dom.yoloEndpoint.value = settings.yoloEndpoint ?? DEFAULT_SETTINGS.yoloEndpoint;
+        dom.apiKey.value = settings.apiKey ?? DEFAULT_SETTINGS.apiKey;
+      } catch (error) {
+        console.error('无法加载设置', error);
+      }
+    }
+
+    function saveSettings() {
+      const settings = {
+        baseUrl: dom.baseUrl.value.trim(),
+        speechEndpoint: dom.speechEndpoint.value.trim() || DEFAULT_SETTINGS.speechEndpoint,
+        yoloEndpoint: dom.yoloEndpoint.value.trim() || DEFAULT_SETTINGS.yoloEndpoint,
+        apiKey: dom.apiKey.value.trim(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      logStatus('设置已保存。', 'success');
+      return settings;
+    }
+
+    function resetSettings() {
+      localStorage.removeItem(STORAGE_KEY);
+      dom.baseUrl.value = DEFAULT_SETTINGS.baseUrl;
+      dom.speechEndpoint.value = DEFAULT_SETTINGS.speechEndpoint;
+      dom.yoloEndpoint.value = DEFAULT_SETTINGS.yoloEndpoint;
+      dom.apiKey.value = DEFAULT_SETTINGS.apiKey;
+      logStatus('已恢复默认设置。', 'info');
+    }
+
+    function getSettings() {
+      return {
+        baseUrl: dom.baseUrl.value.trim(),
+        speechEndpoint: dom.speechEndpoint.value.trim() || DEFAULT_SETTINGS.speechEndpoint,
+        yoloEndpoint: dom.yoloEndpoint.value.trim() || DEFAULT_SETTINGS.yoloEndpoint,
+        apiKey: dom.apiKey.value.trim(),
+      };
+    }
+
+    function buildUrl(base, endpoint) {
+      if (!endpoint.startsWith('/') && !base.endsWith('/')) {
+        return base + '/' + endpoint;
+      }
+      return base + endpoint;
+    }
+
+    function logStatus(message, type = 'info') {
+      const time = new Date().toLocaleTimeString();
+      const color = {
+        success: 'var(--success)',
+        warning: 'var(--warning)',
+        danger: 'var(--danger)',
+        error: 'var(--danger)',
+        info: 'var(--accent)'
+      }[type] || 'var(--accent)';
+      const entry = document.createElement('div');
+      entry.innerHTML = `<span style="color:${color};font-weight:600;">[${time}]</span> ${message}`;
+      dom.statusLog.prepend(entry);
+      dom.statusLog.scrollTop = 0;
+    }
+
+    function applyLoadingState(target, loading, textWhileLoading) {
+      if (!target.dataset.originalText) {
+        target.dataset.originalText = target.innerHTML;
+      }
+      target.disabled = loading;
+      target.innerHTML = loading ? textWhileLoading : target.dataset.originalText;
+    }
+
+    async function sendFormData(url, formData, { signal, expect = 'json', headers = {} } = {}) {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers,
+        signal,
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text.slice(0, 180)}`);
+      }
+
+      if (expect === 'blob') {
+        return await response.blob();
+      }
+      if (expect === 'text') {
+        return await response.text();
+      }
+      return await response.json();
+    }
+
+    async function handleSpeechUpload(file, filename = null) {
+      const settings = getSettings();
+      if (!settings.baseUrl) {
+        logStatus('请先在“服务端连接”面板中填写后端地址。', 'warning');
+        return;
+      }
+      if (!file) {
+        logStatus('请选择音频文件或先开始录音。', 'warning');
+        return;
+      }
+
+      if (speechController) {
+        speechController.abort();
+      }
+      speechController = new AbortController();
+      const url = buildUrl(settings.baseUrl, settings.speechEndpoint);
+      const formData = new FormData();
+      formData.append('file', file, filename || file.name);
+
+      const headers = {};
+      if (settings.apiKey) {
+        headers['Authorization'] = `Bearer ${settings.apiKey}`;
+      }
+
+      applyLoadingState(dom.sendSpeech, true, '⏳ 识别中…');
+      dom.cancelSpeech.disabled = false;
+      logStatus(`开始语音识别：${formData.get('file').name}`, 'info');
+
+      try {
+        const result = await sendFormData(url, formData, { signal: speechController.signal, headers });
+        renderSpeechResult(result);
+        logStatus('语音识别完成。', 'success');
+      } catch (error) {
+        if (speechController.signal.aborted) {
+          logStatus('语音识别请求已取消。', 'warning');
+        } else {
+          console.error(error);
+          logStatus(`语音识别失败：${error.message}`, 'error');
+        }
+      } finally {
+        applyLoadingState(dom.sendSpeech, false);
+        dom.cancelSpeech.disabled = true;
+        speechController = null;
+      }
+    }
+
+    function renderSpeechResult(result) {
+      if (!result) {
+        dom.speechResult.value = '未从后端获取到任何内容。';
+        return;
+      }
+
+      if (typeof result === 'string') {
+        dom.speechResult.value = result;
+        return;
+      }
+
+      if (result.text) {
+        dom.speechResult.value = result.text;
+      } else if (result.transcript) {
+        dom.speechResult.value = result.transcript;
+      } else if (Array.isArray(result.segments)) {
+        const combined = result.segments.map(seg => seg.text || JSON.stringify(seg)).join('\n');
+        dom.speechResult.value = combined;
+      } else {
+        dom.speechResult.value = JSON.stringify(result, null, 2);
+      }
+    }
+
+    async function handleYoloUpload(file) {
+      const settings = getSettings();
+      if (!settings.baseUrl) {
+        logStatus('请先在“服务端连接”面板中填写后端地址。', 'warning');
+        return;
+      }
+      if (!file) {
+        logStatus('请选择需要检测的图片。', 'warning');
+        return;
+      }
+
+      if (yoloController) {
+        yoloController.abort();
+      }
+      yoloController = new AbortController();
+      const url = buildUrl(settings.baseUrl, settings.yoloEndpoint);
+      const formData = new FormData();
+      formData.append('file', file, file.name);
+
+      const headers = {};
+      if (settings.apiKey) {
+        headers['Authorization'] = `Bearer ${settings.apiKey}`;
+      }
+
+      applyLoadingState(dom.sendYolo, true, '🛰️ 检测中…');
+      dom.cancelYolo.disabled = false;
+      logStatus(`开始 YOLO 检测：${file.name}`, 'info');
+
+      try {
+        const result = await sendFormData(url, formData, { signal: yoloController.signal, headers });
+        await renderYoloResult(result, file);
+        logStatus('YOLO 检测完成。', 'success');
+      } catch (error) {
+        if (yoloController.signal.aborted) {
+          logStatus('YOLO 检测请求已取消。', 'warning');
+        } else {
+          console.error(error);
+          logStatus(`YOLO 检测失败：${error.message}`, 'error');
+        }
+      } finally {
+        applyLoadingState(dom.sendYolo, false);
+        dom.cancelYolo.disabled = true;
+        yoloController = null;
+      }
+    }
+
+    async function renderYoloResult(result, originalFile) {
+      dom.yoloImage.style.display = 'none';
+      dom.yoloDetections.textContent = '';
+
+      let detections = [];
+      if (!result) {
+        dom.yoloDetections.textContent = '后端返回为空。';
+      } else if (Array.isArray(result)) {
+        detections = result;
+      } else if (result.detections) {
+        detections = result.detections;
+      }
+
+      if (result && result.image) {
+        dom.yoloImage.src = result.image.startsWith('data:') ? result.image : `data:image/png;base64,${result.image}`;
+        dom.yoloImage.style.display = 'block';
+      }
+
+      if (detections.length) {
+        dom.yoloDetections.textContent = '';
+        detections.forEach((item, index) => {
+          const div = document.createElement('div');
+          const conf = item.confidence ?? item.score ?? 0;
+          const box = item.box || item.bbox || item.boundingBox;
+          div.innerHTML = `<strong>#${index + 1}</strong> ${item.label || item.class || '未命名目标'} - ${(conf * 100).toFixed(1)}%`;
+          if (box) {
+            div.innerHTML += `<br /><small>box: ${Array.isArray(box) ? box.join(', ') : JSON.stringify(box)}</small>`;
+          }
+          dom.yoloDetections.appendChild(div);
+        });
+      } else if (!result || !result.image) {
+        dom.yoloDetections.textContent = '后端没有返回 detections 列表。';
+      }
+
+      drawDetectionsOnCanvas(detections, originalFile);
+    }
+
+    function drawDetectionsOnCanvas(detections, originalFile) {
+      const canvas = dom.yoloCanvas;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return;
+      }
+
+      const img = new Image();
+      const objectURL = URL.createObjectURL(originalFile);
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        if (Array.isArray(detections) && detections.length) {
+          ctx.lineWidth = Math.max(2, Math.min(canvas.width, canvas.height) / 200);
+          ctx.font = `${Math.max(12, canvas.width / 40)}px sans-serif`;
+          detections.forEach(det => {
+            const box = det.box || det.bbox || det.boundingBox;
+            if (!box) return;
+            let [x, y, w, h] = Array.isArray(box) ? box : [box.x, box.y, box.width || box.w, box.height || box.h];
+            if (box.xmin !== undefined) {
+              x = box.xmin;
+              y = box.ymin;
+              w = (box.xmax ?? x) - x;
+              h = (box.ymax ?? y) - y;
+            }
+            if ([x, y, w, h].some(v => typeof v !== 'number')) {
+              return;
+            }
+            ctx.strokeStyle = '#22d3ee';
+            ctx.fillStyle = 'rgba(34, 211, 238, 0.25)';
+            ctx.strokeRect(x, y, w, h);
+            ctx.fillRect(x, y, w, h);
+            const label = det.label || det.class || 'Object';
+            const score = det.confidence ?? det.score;
+            const text = score ? `${label} ${(score * 100).toFixed(1)}%` : label;
+            const textWidth = ctx.measureText(text).width;
+            const padding = 6;
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+            ctx.fillRect(x, Math.max(0, y - 24), textWidth + padding * 2, 24);
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillText(text, x + padding, Math.max(16, y - 8));
+          });
+        }
+        URL.revokeObjectURL(objectURL);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectURL);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        dom.yoloDetections.textContent = '无法读取原始图片，可能是浏览器不支持的格式。';
+      };
+      img.src = objectURL;
+    }
+
+    function setupRecording() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        dom.recordToggle.disabled = true;
+        dom.recordToggle.textContent = '浏览器不支持录音';
+        logStatus('当前浏览器不支持 MediaRecorder。', 'warning');
+        return;
+      }
+
+      dom.recordToggle.addEventListener('click', async () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+          return;
+        }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          recordedChunks = [];
+
+          mediaRecorder.ondataavailable = event => {
+            if (event.data.size > 0) {
+              recordedChunks.push(event.data);
+            }
+          };
+
+          mediaRecorder.onstop = () => {
+            dom.recordToggle.innerHTML = '🎙️ 开始录音';
+            const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+            const file = new File([blob], `recording_${Date.now()}.webm`, { type: blob.type });
+            handleSpeechUpload(file, file.name);
+            stream.getTracks().forEach(track => track.stop());
+          };
+
+          mediaRecorder.start();
+          dom.recordToggle.innerHTML = '⏹️ 停止录音';
+          logStatus('开始录音，完成后自动发送识别。', 'info');
+        } catch (error) {
+          console.error(error);
+          logStatus(`无法启动录音：${error.message}`, 'error');
+        }
+      });
+    }
+
+    function bindEvents() {
+      dom.saveSettings.addEventListener('click', saveSettings);
+      dom.resetSettings.addEventListener('click', resetSettings);
+      dom.sendSpeech.addEventListener('click', () => handleSpeechUpload(dom.speechFile.files[0]));
+      dom.sendYolo.addEventListener('click', () => handleYoloUpload(dom.yoloFile.files[0]));
+      dom.cancelSpeech.addEventListener('click', () => {
+        if (speechController) {
+          speechController.abort();
+        }
+      });
+      dom.cancelYolo.addEventListener('click', () => {
+        if (yoloController) {
+          yoloController.abort();
+        }
+      });
+      setupRecording();
+    }
+
+    loadSettings();
+    bindEvents();
+    logStatus('前端初始化完成。', 'success');
+  </script>
+</body>
+</html>
