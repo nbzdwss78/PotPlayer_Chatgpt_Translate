@@ -66,6 +66,9 @@ string pre_context_truncation_mode = "drop_oldest"; // drop_oldest | smart_trim
 string pre_context_cache_mode = "auto"; // auto | off
 string pre_model_token_limits_json = "{}"; // serialized token limit rules (injected by installer)
 
+const string TRANSLATION_FAILURE_WARNING_PREFIX = "[翻译失败 请截图分享给开发者] ";
+string FormatFailureTranslation(const string &in rawResponse, const string &in fallbackMessage);
+
 string api_key = pre_api_key;
 string selected_model = pre_selected_model; // Default model
 string apiUrl = pre_apiUrl; // Default API URL
@@ -705,15 +708,16 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
     if (translation == "") {
         string response = ExecuteWithRetry(apiUrl, headers, requestData, delayInt, retryModeInt);
         if (response == "") {
-            HostPrintUTF8("Translation request failed. Please check network connection or API Key.\n");
-            return "";
+            string failureMessage = "Translation request failed. Please check network connection or API Key.";
+            HostPrintUTF8(failureMessage + "\n");
+            return FormatFailureTranslation("", failureMessage);
         }
 
         JsonReader Reader;
         JsonValue Root;
         if (!Reader.parse(response, Root)) {
             HostPrintUTF8("Failed to parse API response.\n");
-            return "";
+            return FormatFailureTranslation(response, "Failed to parse API response.");
         }
 
         JsonValue choices = Root["choices"];
@@ -727,25 +731,35 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
                    Root["error"]["message"].isString()) {
             string errorMessage = Root["error"]["message"].asString();
             HostPrintUTF8("API Error: " + errorMessage + "\n");
-            return "API Error: " + errorMessage;
+            return FormatFailureTranslation(response, "API Error: " + errorMessage);
         } else {
             HostPrintUTF8("Translation failed. Please check input parameters or API Key configuration.\n");
-            return "Translation failed. Please check input parameters or API Key configuration.";
+            return FormatFailureTranslation(response, "Translation failed. Please check input parameters or API Key configuration.");
         }
     }
 
-    if (selected_model.find("gemini") != -1) {
+    bool isFailureTranslation = translation.length() >= TRANSLATION_FAILURE_WARNING_PREFIX.length() &&
+                                translation.substr(0, TRANSLATION_FAILURE_WARNING_PREFIX.length()) == TRANSLATION_FAILURE_WARNING_PREFIX;
+
+    if (!isFailureTranslation && selected_model.find("gemini") != -1) {
         while (translation.length() > 0 && translation.substr(translation.length() - 1, 1) == "\n") {
             translation = translation.substr(0, translation.length() - 1);
         }
     }
-    if (targetLangCode == "fa" || targetLangCode == "ar" || targetLangCode == "he") {
+    if (!isFailureTranslation && (targetLangCode == "fa" || targetLangCode == "ar" || targetLangCode == "he")) {
         string UNICODE_RLE = "\u202B";
         translation = UNICODE_RLE + translation;
     }
     SrcLang = "UTF8";
     DstLang = "UTF8";
     return translation.Trim();
+}
+
+string FormatFailureTranslation(const string &in rawResponse, const string &in fallbackMessage) {
+    string detail = rawResponse.Trim();
+    if (detail == "")
+        detail = fallbackMessage;
+    return TRANSLATION_FAILURE_WARNING_PREFIX + detail;
 }
 
 // Plugin Initialization

@@ -53,6 +53,9 @@ string GetPasswordText() {
 
 // Global Variables
 // Pre-configured values (auto-filled by installer)
+const string TRANSLATION_FAILURE_WARNING_PREFIX = "[翻译失败 请截图分享给开发者] ";
+string FormatFailureTranslation(const string &in rawResponse, const string &in fallbackMessage);
+
 string pre_api_key = ""; // will be replaced during installation
 string pre_selected_model = "gpt-5-mini"; // will be replaced during installation
 string pre_apiUrl = "https://api.openai.com/v1/chat/completions"; // will be replaced during installation
@@ -575,15 +578,16 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
         attempts++;
     }
     if (response == "") {
-        HostPrintUTF8("Translation request failed. Please check network connection or API Key.\n");
-        return "";
+        string failureMessage = "Translation request failed. Please check network connection or API Key.";
+        HostPrintUTF8(failureMessage + "\n");
+        return FormatFailureTranslation("", failureMessage);
     }
 
     JsonReader Reader;
     JsonValue Root;
     if (!Reader.parse(response, Root)) {
         HostPrintUTF8("Failed to parse API response.\n");
-        return "";
+        return FormatFailureTranslation(response, "Failed to parse API response.");
     }
 
     JsonValue choices = Root["choices"];
@@ -592,12 +596,15 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
         choices[0]["message"].isObject() &&
         choices[0]["message"]["content"].isString()) {
         string translatedText = choices[0]["message"]["content"].asString();
-        if (selected_model.find("gemini") != -1) {
+        bool isFailureTranslation = translatedText.length() >= TRANSLATION_FAILURE_WARNING_PREFIX.length() &&
+                                    translatedText.substr(0, TRANSLATION_FAILURE_WARNING_PREFIX.length()) == TRANSLATION_FAILURE_WARNING_PREFIX;
+
+        if (!isFailureTranslation && selected_model.find("gemini") != -1) {
             while (translatedText.length() > 0 && translatedText.substr(translatedText.length() - 1, 1) == "\n") {
                 translatedText = translatedText.substr(0, translatedText.length() - 1);
             }
         }
-        if (DstLang == "fa" || DstLang == "ar" || DstLang == "he") {
+        if (!isFailureTranslation && (DstLang == "fa" || DstLang == "ar" || DstLang == "he")) {
             string UNICODE_RLE = "\u202B";
             translatedText = UNICODE_RLE + translatedText;
         }
@@ -611,11 +618,18 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
         Root["error"]["message"].isString()) {
         string errorMessage = Root["error"]["message"].asString();
         HostPrintUTF8("API Error: " + errorMessage + "\n");
-        return "API Error: " + errorMessage;
+        return FormatFailureTranslation(response, "API Error: " + errorMessage);
     } else {
         HostPrintUTF8("Translation failed. Please check input parameters or API Key configuration.\n");
-        return "Translation failed. Please check input parameters or API Key configuration.";
+        return FormatFailureTranslation(response, "Translation failed. Please check input parameters or API Key configuration.");
     }
+}
+
+string FormatFailureTranslation(const string &in rawResponse, const string &in fallbackMessage) {
+    string detail = rawResponse.Trim();
+    if (detail == "")
+        detail = fallbackMessage;
+    return TRANSLATION_FAILURE_WARNING_PREFIX + detail;
 }
 
 // Plugin Initialization
