@@ -16,7 +16,7 @@ from openai import OpenAI
 import win32com.client
 from PyQt6 import QtWidgets, QtCore, QtGui
 
-PLUGIN_VERSION = "1.7"
+PLUGIN_VERSION = "1.7.1"
 
 # ========= Helpers for bundled resources =========
 
@@ -46,46 +46,46 @@ def _format_language_strings(strings):
                     lang_dict[key] = value.replace("{VERSION}", PLUGIN_VERSION)
 
 
-# ========= Per-model provider dict (model → api_base ROOT & purchase link) =========
-# 重要：api_base 统一为“根路径”（例如 https://api.openai.com/v1），不要带 /chat/completions
+# ========= Per-model provider dict (model → api_base endpoint & purchase link) =========
+# 重要：预设使用完整 chat/completions 端点（例如 https://api.openai.com/v1/chat/completions）
 API_PROVIDERS = {
     # Official OpenAI presets
     "gpt-5": {
         "model": "gpt-5",
-        "api_base": "https://api.openai.com/v1",
+        "api_base": "https://api.openai.com/v1/chat/completions",
         "purchase_page": "https://platform.openai.com/account/billing"
     },
     "gpt-5-mini": {
         "model": "gpt-5-mini",
-        "api_base": "https://api.openai.com/v1",
+        "api_base": "https://api.openai.com/v1/chat/completions",
         "purchase_page": "https://platform.openai.com/account/billing"
     },
     "gpt-5-nano": {
         "model": "gpt-5-nano",
-        "api_base": "https://api.openai.com/v1",
+        "api_base": "https://api.openai.com/v1/chat/completions",
         "purchase_page": "https://platform.openai.com/account/billing"
     },
     "gpt-4o": {
         "model": "gpt-4o",
-        "api_base": "https://api.openai.com/v1",
+        "api_base": "https://api.openai.com/v1/chat/completions",
         "purchase_page": "https://platform.openai.com/account/billing"
     },
     "gpt-4.1": {
         "model": "gpt-4.1",
-        "api_base": "https://api.openai.com/v1",
+        "api_base": "https://api.openai.com/v1/chat/completions",
         "purchase_page": "https://platform.openai.com/account/billing"
     },
     "gpt-4.1-mini": {
         "model": "gpt-4.1-mini",
-        "api_base": "https://api.openai.com/v1",
+        "api_base": "https://api.openai.com/v1/chat/completions",
         "purchase_page": "https://platform.openai.com/account/billing"
     },
-    # 示例第三方：需 OpenAI-兼容接口（路径中一般包含 /v1）
-    # 如你有网关给的是完整 endpoint（.../chat/completions），也能用，代码会自动规范化为根路径
-    "glm-4": {
+    # 示例第三方：需 OpenAI-兼容接口（路径中一般包含 /v1/chat/completions）
+    # 如你有网关给的是完整 endpoint（.../chat/completions），也能用，代码会自动规范化
+    "ollama": {
         "model": "glm-4",
-        "api_base": "https://open.bigmodel.cn/api/paas/v4",  # 假设兼容 /chat/completions
-        "purchase_page": "https://open.bigmodel.cn/billing"
+        "api_base": "http://xxx.xxx.xxx.xxx:11434/v1/chat/completions",  # 假设兼容 /chat/completions
+        "purchase_page": "pass"
     },
     # Sentinel for custom entry (user-defined)
     "__CUSTOM__": {
@@ -202,11 +202,32 @@ def _escape_for_as_string(value: str) -> str:
 
 
 # —— OpenAI SDK 验证：把“可能是完整 endpoint”的 api_url 规范化为 base_url 根路径
+def _normalize_api_url_for_config(api_url: str) -> str:
+    """
+    Normalize user/preset API URL to a chat/completions endpoint.
+    - If为空，默认写入官方 chat/completions。
+    - 如果以 /v1 或 /v4 结尾，补上 /chat/completions。
+    - 已经是 chat/completions 或 responses 结尾，则保持不变。
+    """
+    u = (api_url or "").strip()
+    if not u:
+        return "https://api.openai.com/v1/chat/completions"
+    u = u.rstrip("/")
+    for tail in ("/chat/completions", "/responses"):
+        if u.endswith(tail):
+            return u
+    if re.search(r"/v[14]$", u):
+        return u + "/chat/completions"
+    return u
+
+
 def _normalize_base_url_for_openai(api_url: str) -> str:
+    """
+    Normalize to base_url for OpenAI SDK (strip resource suffix).
+    """
     u = (api_url or "").strip().rstrip("/")
     if not u:
         return "https://api.openai.com/v1"
-    # 如果用户填了 .../chat/completions 或 /responses，剥掉尾巴变成根
     for tail in ("/chat/completions", "/responses"):
         if u.endswith(tail):
             return u[: -len(tail)]
@@ -218,7 +239,8 @@ def verify_api_settings(model, api_url, api_key):
     - 支持 base_url 为根或完整 endpoint（自动规范化）。
     - 仅请求 1 token，失败时返回异常信息。
     """
-    base_url = _normalize_base_url_for_openai(api_url)
+    api_url_for_config = _normalize_api_url_for_config(api_url)
+    base_url = _normalize_base_url_for_openai(api_url_for_config)
     try:
         client = OpenAI(api_key=api_key, base_url=base_url)
         resp = client.chat.completions.create(
@@ -282,6 +304,7 @@ def apply_preconfig(file_path, api_key, model, api_base, delay_ms, retry_mode, d
                     context_budget=None, context_truncation=None, context_cache_mode=None,
                     token_limits_json=None):
     try:
+        api_base = _normalize_api_url_for_config(api_base)
         with open(file_path, "r", encoding="utf-8") as f:
             data = f.read()
         data = re.sub(r'pre_api_key\s*=\s*".*?"', f'pre_api_key = "{api_key}"', data)
@@ -302,12 +325,20 @@ def apply_preconfig(file_path, api_key, model, api_base, delay_ms, retry_mode, d
             data = re.sub(r'pre_model_token_limits_json\s*=\s*".*?"',
                           f'pre_model_token_limits_json = "{escaped_json}"', data)
         if debug_mode and "HostOpenConsole();" not in data:
-            idx = data.find("*/")
-            if idx != -1:
-                idx += 2
-                data = data[:idx] + "\nHostOpenConsole();\n" + data[idx:]
-            else:
-                data = "HostOpenConsole();\n" + data
+            inserted = False
+            m = re.search(r'(void\s+OnInitialize\(\)\s*\{\s*\n)([ \t]*)', data)
+            if m:
+                insert_pos = m.end(1)
+                indent = m.group(2) or "    "
+                data = data[:insert_pos] + indent + "HostOpenConsole();\n" + data[insert_pos:]
+                inserted = True
+            if not inserted:
+                idx = data.find("*/")
+                if idx != -1:
+                    idx += 2
+                    data = data[:idx] + "\nHostOpenConsole();\n" + data[idx:]
+                else:
+                    data = "HostOpenConsole();\n" + data
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(data)
     except Exception:
@@ -770,12 +801,13 @@ class ConfigPage(QtWidgets.QWizardPage):
         stored_model = self.wizard.model or ""
         stored_api = self.wizard.api_base or ""
         stored_key = self.wizard.api_key or ""
-        normalized_api = _normalize_base_url_for_openai(stored_api)
+        normalized_api = _normalize_api_url_for_config(stored_api)
 
         target_index = -1
         for idx, preset in enumerate(preset_names):
             provider = API_PROVIDERS.get(preset, API_PROVIDERS["__CUSTOM__"])
-            if provider.get("model", "") == stored_model and provider.get("api_base", "") == normalized_api:
+            provider_api = _normalize_api_url_for_config(provider.get("api_base", ""))
+            if provider.get("model", "") == stored_model and provider_api == normalized_api:
                 target_index = idx
                 break
 
@@ -796,7 +828,7 @@ class ConfigPage(QtWidgets.QWizardPage):
         else:
             self.on_model_change("Custom...", initializing=True)
             self.model_edit.setText(stored_model)
-            self.api_edit.setText(stored_api)
+            self.api_edit.setText(normalized_api)
 
         self.key_edit.setText(stored_key)
         self.status.setText("")
@@ -815,7 +847,7 @@ class ConfigPage(QtWidgets.QWizardPage):
             self.model_edit.setReadOnly(True)
             self.api_edit.setReadOnly(False)
             self.model_edit.setText(provider.get("model", ""))
-            self.api_edit.setText(provider.get("api_base", ""))
+            self.api_edit.setText(_normalize_api_url_for_config(provider.get("api_base", "")))
             self.purchase_link = provider.get("purchase_page", "")
         if not initializing:
             self.status.setText("")
@@ -850,7 +882,7 @@ class ConfigPage(QtWidgets.QWizardPage):
 
     def validatePage(self):
         self.wizard.model = self.model_edit.text().strip()
-        self.wizard.api_base = _normalize_base_url_for_openai(self.api_edit.text().strip())
+        self.wizard.api_base = _normalize_api_url_for_config(self.api_edit.text().strip())
         self.wizard.api_key = self.key_edit.text().strip()
         if self.skip:
             return True
