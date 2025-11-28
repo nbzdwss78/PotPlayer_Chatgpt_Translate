@@ -85,7 +85,8 @@ API_PROVIDERS = {
     "ollama": {
         "model": "glm-4",
         "api_base": "http://xxx.xxx.xxx.xxx:11434/v1/chat/completions",  # 假设兼容 /chat/completions
-        "purchase_page": "pass"
+        "purchase_page": "pass",
+        "allow_custom_model": True
     },
     # Sentinel for custom entry (user-defined)
     "__CUSTOM__": {
@@ -810,6 +811,8 @@ class ConfigPage(QtWidgets.QWizardPage):
             if provider.get("model", "") == stored_model and provider_api == normalized_api:
                 target_index = idx
                 break
+            if provider.get("allow_custom_model", False) and provider_api == normalized_api:
+                target_index = idx
 
         self.model_combo.blockSignals(True)
         if target_index >= 0:
@@ -825,6 +828,8 @@ class ConfigPage(QtWidgets.QWizardPage):
             current_text = self.model_combo.itemText(target_index)
             self.on_model_change(current_text, initializing=True)
             self.api_edit.setText(normalized_api)
+            if stored_model:
+                self.model_edit.setText(stored_model)
         else:
             self.on_model_change("Custom...", initializing=True)
             self.model_edit.setText(stored_model)
@@ -844,7 +849,7 @@ class ConfigPage(QtWidgets.QWizardPage):
             self.purchase_link = ""
         else:
             provider = API_PROVIDERS.get(name, API_PROVIDERS["__CUSTOM__"])
-            self.model_edit.setReadOnly(True)
+            self.model_edit.setReadOnly(not provider.get("allow_custom_model", False))
             self.api_edit.setReadOnly(False)
             self.model_edit.setText(provider.get("model", ""))
             self.api_edit.setText(_normalize_api_url_for_config(provider.get("api_base", "")))

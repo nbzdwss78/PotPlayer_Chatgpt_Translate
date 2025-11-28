@@ -67,8 +67,7 @@ string GPT_pre_context_cache_mode = "auto"; // auto | off
 string GPT_pre_model_token_limits_json = "{}"; // serialized token limit rules (injected by installer)
 
 // Context-specific identifiers to prevent collisions with other subtitle translator scripts.
-const string GPT_CTX_TRANSLATION_FAILURE_WARNING_PREFIX = "[翻译失败 请截图分享给开发者] ";
-string GPT_CTX_FormatFailureTranslation(const string &in rawResponse, const string &in fallbackMessage);
+const string GPT_CTX_TRANSLATION_FAILURE_WARNING_PREFIX = "[Translation failed - please share a screenshot with the developer] ";
 
 string GPT_api_key = GPT_pre_api_key;
 string GPT_selected_model = GPT_pre_selected_model; // Default model
@@ -711,14 +710,14 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
         if (response == "") {
             string failureMessage = "Translation request failed. Please check network connection or API Key.";
             HostPrintUTF8(failureMessage + "\n");
-            return GPT_CTX_FormatFailureTranslation("", failureMessage);
+            return GPT_CTX_BuildFailureTranslation("", failureMessage);
         }
 
         JsonReader Reader;
         JsonValue Root;
         if (!Reader.parse(response, Root)) {
             HostPrintUTF8("Failed to parse API response.\n");
-            return GPT_CTX_FormatFailureTranslation(response, "Failed to parse API response.");
+            return GPT_CTX_BuildFailureTranslation(response, "Failed to parse API response.");
         }
 
         JsonValue choices = Root["choices"];
@@ -732,10 +731,10 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
                    Root["error"]["message"].isString()) {
             string errorMessage = Root["error"]["message"].asString();
             HostPrintUTF8("API Error: " + errorMessage + "\n");
-            return GPT_CTX_FormatFailureTranslation(response, "API Error: " + errorMessage);
+            return GPT_CTX_BuildFailureTranslation(response, "API Error: " + errorMessage);
         } else {
             HostPrintUTF8("Translation failed. Please check input parameters or API Key configuration.\n");
-            return GPT_CTX_FormatFailureTranslation(response, "Translation failed. Please check input parameters or API Key configuration.");
+            return GPT_CTX_BuildFailureTranslation(response, "Translation failed. Please check input parameters or API Key configuration.");
         }
     }
 
@@ -756,7 +755,7 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
     return translation.Trim();
 }
 
-string GPT_CTX_FormatFailureTranslation(const string &in rawResponse, const string &in fallbackMessage) {
+string GPT_CTX_BuildFailureTranslation(const string &in rawResponse, const string &in fallbackMessage) {
     string detail = rawResponse.Trim();
     if (detail == "")
         detail = fallbackMessage;
@@ -885,25 +884,29 @@ string GPT_BuildResponsesPayload(const string &in systemMsg, const string &in su
 }
 
 string GPT_ExtractResponsesText(JsonValue &in root) {
+    if (!root.isObject())
+        return "";
+
     JsonValue output = root["output"];
-    if (output.isArray()) {
-        int size = output.size();
-        for (int i = 0; i < size; i++) {
-            JsonValue entry = output[i];
-            if (!entry.isObject())
-                continue;
-            JsonValue content = entry["content"];
-            if (!content.isArray())
-                continue;
-            int csize = content.size();
-            for (int j = 0; j < csize; j++) {
-                JsonValue part = content[j];
-                if (part.isObject()) {
-                    if (part["type"].isString() && part["type"].asString() == "output_text" && part["text"].isString())
-                        return part["text"].asString();
-                } else if (part.isString()) {
-                    return part.asString();
-                }
+    if (!output.isArray())
+        return "";
+
+    int size = output.size();
+    for (int i = 0; i < size; i++) {
+        JsonValue entry = output[i];
+        if (!entry.isObject())
+            continue;
+        JsonValue content = entry["content"];
+        if (!content.isArray())
+            continue;
+        int csize = content.size();
+        for (int j = 0; j < csize; j++) {
+            JsonValue part = content[j];
+            if (part.isObject()) {
+                if (part["type"].isString() && part["type"].asString() == "output_text" && part["text"].isString())
+                    return part["text"].asString();
+            } else if (part.isString()) {
+                return part.asString();
             }
         }
     }

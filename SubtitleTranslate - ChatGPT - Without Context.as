@@ -54,8 +54,7 @@ string GetPasswordText() {
 // Global Variables
 // Pre-configured values (auto-filled by installer)
 // No-context identifiers are prefixed to avoid conflicts with other subtitle translator scripts.
-const string GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX = "[翻译失败 请截图分享给开发者] ";
-string GPT_WC_FormatFailureTranslation(const string &in rawResponse, const string &in fallbackMessage);
+const string GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX = "[Translation failed - please share a screenshot with the developer] ";
 
 string GPT_pre_api_key = ""; // will be replaced during installation
 string GPT_pre_selected_model = "gpt-5-mini"; // will be replaced during installation
