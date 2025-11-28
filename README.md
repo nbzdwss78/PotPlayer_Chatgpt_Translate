@@ -147,6 +147,9 @@ Click below to watch the tutorial on Bilibili:
    ```
    Replace `C:\Program Files\DAUM\PotPlayer` with your custom PotPlayer installation path if necessary.
 
+> ℹ️ **If you switch between the context-aware and no-context scripts, replace both `.as` files together.**
+> Older copies that used the shared `FormatFailureTranslation` name can cause PotPlayer to report a conflict on whichever script loads first (often the standard context version). The current files use uniquely prefixed helpers to avoid this.
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
