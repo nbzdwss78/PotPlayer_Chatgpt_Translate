@@ -299,6 +299,12 @@ def generate_uninstaller(uninstall_bat_path, files_to_delete, reg_key):
                 f.write(f'del "{file}" /f /q\n')
         f.write('del "%~f0" /f /q\n')
         f.write(f'reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{reg_key}" /f\n')
+        popup_message = "卸载完成，所有文件均已清理，如果Geek Uninstaller或其他卸载工具提示有残留，请仔细甄别，避免误删PotPlayer本体文件"
+        f.write(
+            'powershell -NoProfile -Command '
+            '"Add-Type -AssemblyName PresentationFramework;'
+            f"[System.Windows.MessageBox]::Show('{popup_message}','PotPlayer ChatGPT Translate')\"\n"
+        )
         f.write("\nexit\n")
 
 def apply_preconfig(file_path, api_key, model, api_base, delay_ms, retry_mode, debug_mode,
