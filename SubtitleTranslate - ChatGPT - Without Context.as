@@ -76,15 +76,15 @@ array<string> GPT_token_rule_values;
 array<int> GPT_token_rule_limits;
 
 // Helper functions to load configuration while respecting installer defaults
-string GPT_BuildConfigSentinel(const string &in key) {
+string BuildConfigSentinel(const string &in key) {
     return "#__POTPLAYER_CFG_UNSET__#" + key + "#__";
 }
 
-string GPT_LoadInstallerConfig(const string &in key, const string &in installerValue, const string &in fallbackKey = "") {
-    string sentinel = GPT_BuildConfigSentinel(key);
+string LoadInstallerConfig(const string &in key, const string &in installerValue, const string &in fallbackKey = "") {
+    string sentinel = BuildConfigSentinel(key);
     string storedValue = HostLoadString(key, sentinel);
     if (storedValue == sentinel && fallbackKey != "") {
-        string fallbackSentinel = GPT_BuildConfigSentinel(fallbackKey);
+        string fallbackSentinel = BuildConfigSentinel(fallbackKey);
         string fallbackValue = HostLoadString(fallbackKey, fallbackSentinel);
         if (fallbackValue != fallbackSentinel)
             return fallbackValue;
@@ -94,27 +94,27 @@ string GPT_LoadInstallerConfig(const string &in key, const string &in installerV
     return storedValue;
 }
 
-void GPT_EnsureConfigDefault(const string &in key, const string &in value) {
-    string sentinel = GPT_BuildConfigSentinel(key);
+void EnsureConfigDefault(const string &in key, const string &in value) {
+    string sentinel = BuildConfigSentinel(key);
     if (HostLoadString(key, sentinel) == sentinel)
         HostSaveString(key, value);
 }
 
-void GPT_EnsureInstallerDefaultsPersisted() {
-    GPT_EnsureConfigDefault("wc_api_key", GPT_pre_api_key);
-    GPT_EnsureConfigDefault("wc_selected_model", GPT_pre_selected_model);
-    GPT_EnsureConfigDefault("wc_apiUrl", GPT_pre_apiUrl);
-    GPT_EnsureConfigDefault("wc_delay_ms", GPT_pre_delay_ms);
-    GPT_EnsureConfigDefault("wc_retry_mode", GPT_pre_retry_mode);
+void EnsureInstallerDefaultsPersisted() {
+    EnsureConfigDefault("wc_api_key", GPT_pre_api_key);
+    EnsureConfigDefault("wc_selected_model", GPT_pre_selected_model);
+    EnsureConfigDefault("wc_apiUrl", GPT_pre_apiUrl);
+    EnsureConfigDefault("wc_delay_ms", GPT_pre_delay_ms);
+    EnsureConfigDefault("wc_retry_mode", GPT_pre_retry_mode);
 }
 
-void GPT_RefreshConfiguration() {
-    GPT_EnsureInstallerDefaultsPersisted();
-    GPT_api_key = GPT_LoadInstallerConfig("wc_api_key", GPT_pre_api_key, "gpt_api_key");
-    GPT_selected_model = GPT_LoadInstallerConfig("wc_selected_model", GPT_pre_selected_model, "gpt_selected_model");
-    GPT_apiUrl = GPT_LoadInstallerConfig("wc_apiUrl", GPT_pre_apiUrl, "gpt_apiUrl");
-    GPT_delay_ms = GPT_LoadInstallerConfig("wc_delay_ms", GPT_pre_delay_ms, "gpt_delay_ms");
-    GPT_retry_mode = GPT_LoadInstallerConfig("wc_retry_mode", GPT_pre_retry_mode, "gpt_retry_mode");
+void RefreshConfiguration() {
+    EnsureInstallerDefaultsPersisted();
+    GPT_api_key = LoadInstallerConfig("wc_api_key", GPT_pre_api_key, "gpt_api_key");
+    GPT_selected_model = LoadInstallerConfig("wc_selected_model", GPT_pre_selected_model, "gpt_selected_model");
+    GPT_apiUrl = LoadInstallerConfig("wc_apiUrl", GPT_pre_apiUrl, "gpt_apiUrl");
+    GPT_delay_ms = LoadInstallerConfig("wc_delay_ms", GPT_pre_delay_ms, "gpt_delay_ms");
+    GPT_retry_mode = LoadInstallerConfig("wc_retry_mode", GPT_pre_retry_mode, "gpt_retry_mode");
 }
 
 // Supported Language List
@@ -237,7 +237,7 @@ array<string> GetDstLangs() {
     return ret;
 }
 
-bool GPT_IsDigits(const string &in s) {
+bool IsDigits(const string &in s) {
     if (s.length() == 0)
         return false;
     for (uint i = 0; i < s.length(); i++) {
@@ -248,7 +248,7 @@ bool GPT_IsDigits(const string &in s) {
     return true;
 }
 
-int GPT_ParseInt(const string &in s) {
+int ParseInt(const string &in s) {
     int v = 0;
     for (uint i = 0; i < s.length(); i++) {
         uint8 c = s[i];
@@ -260,7 +260,7 @@ int GPT_ParseInt(const string &in s) {
 }
 
 // API Key and API Base verification process
-string GPT_ServerLogin(string User, string Pass) {
+string ServerLogin(string User, string Pass) {
     string errorAccum = "";
     User = User.Trim();
     Pass = Pass.Trim();
@@ -285,9 +285,9 @@ string GPT_ServerLogin(string User, string Pass) {
         string t = tokens[i];
         if (t == "nullkey")
             allowNullApiKey = true;
-        else if (t.substr(0,5) == "retry" && GPT_IsDigits(t.substr(5)))
+        else if (t.substr(0,5) == "retry" && IsDigits(t.substr(5)))
             retryToken = t.substr(5);
-        else if (GPT_IsDigits(t))
+        else if (IsDigits(t))
             delayToken = t;
         else if (customApiUrl == "")
             customApiUrl = t;
@@ -316,8 +316,8 @@ string GPT_ServerLogin(string User, string Pass) {
     string verifyHeaders = "Authorization: Bearer " + Pass + "\nContent-Type: application/json";
     string testSystemMsg = "You are a test assistant.";
     string testUserMsg = "Hello";
-    string escapedTestSystemMsg = GPT_JsonEscape(testSystemMsg);
-    string escapedTestUserMsg = GPT_JsonEscape(testUserMsg);
+    string escapedTestSystemMsg = JsonEscape(testSystemMsg);
+    string escapedTestUserMsg = JsonEscape(testUserMsg);
     string testRequestData = "{\"model\":\"" + userModel + "\"," 
                              "\"messages\":[{\"role\":\"system\",\"content\":\"" + escapedTestSystemMsg + "\"}," 
                              "{\"role\":\"user\",\"content\":\"" + escapedTestUserMsg + "\"}]}";
@@ -424,7 +424,7 @@ string GPT_ServerLogin(string User, string Pass) {
 }
 
 // Logout Interface to clear model name and API Key
-void GPT_ServerLogout() {
+void ServerLogout() {
     GPT_api_key = "";
     GPT_selected_model = GPT_pre_selected_model;
     GPT_apiUrl = GPT_pre_apiUrl;
@@ -439,7 +439,7 @@ void GPT_ServerLogout() {
 }
 
 // JSON String Escape Function
-string GPT_JsonEscape(const string &in input) {
+string JsonEscape(const string &in input) {
     string output = input;
     output.replace("\\", "\\\\");
     output.replace("\"", "\\\"");
@@ -451,11 +451,11 @@ string GPT_JsonEscape(const string &in input) {
 }
 
 // Function to estimate token count based on character length
-int GPT_EstimateTokenCount(const string &in text) {
+int EstimateTokenCount(const string &in text) {
     return int(float(text.length()) / 4);
 }
 
-void GPT_EnsureTokenRulesLoaded() {
+void EnsureTokenRulesLoaded() {
     if (GPT_token_rules_initialized)
         return;
     GPT_token_rules_initialized = true;
@@ -474,7 +474,7 @@ void GPT_EnsureTokenRulesLoaded() {
     if (root["default"].isInt())
         GPT_default_model_token_limit = root["default"].asInt();
     else if (root["default"].isString()) {
-        int parsedDefault = GPT_ParseInt(root["default"].asString());
+        int parsedDefault = ParseInt(root["default"].asString());
         if (parsedDefault > 0)
             GPT_default_model_token_limit = parsedDefault;
     }
@@ -498,7 +498,7 @@ void GPT_EnsureTokenRulesLoaded() {
         if (entry["tokens"].isInt())
             limit = entry["tokens"].asInt();
         else if (entry["tokens"].isString())
-            limit = GPT_ParseInt(entry["tokens"].asString());
+            limit = ParseInt(entry["tokens"].asString());
         if (matchType != "" && matchValue != "" && limit > 0) {
             GPT_token_rule_types.insertLast(matchType);
             GPT_token_rule_values.insertLast(matchValue);
@@ -508,8 +508,8 @@ void GPT_EnsureTokenRulesLoaded() {
 }
 
 // Function to get the model's maximum context length
-int GPT_GetModelMaxTokens(const string &in modelName) {
-    GPT_EnsureTokenRulesLoaded();
+int GetModelMaxTokens(const string &in modelName) {
+    EnsureTokenRulesLoaded();
     string trimmedModel = modelName.Trim();
     if (trimmedModel == "")
         return GPT_default_model_token_limit;
@@ -536,7 +536,7 @@ int GPT_GetModelMaxTokens(const string &in modelName) {
 
 // Translation Function (Without Context Support)
 string Translate(string Text, string &in SrcLang, string &in DstLang) {
-    GPT_RefreshConfiguration();
+    RefreshConfiguration();
 
     if (GPT_api_key == "") {
         HostPrintUTF8("API Key not configured. Please enter it in the settings menu.\n");
@@ -555,16 +555,16 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
     string systemMsg = "You translate subtitles. Output only the translation.";
     string userMsg = "Translate from " + (SrcLang == "" ? "Auto Detect" : SrcLang) + " to " + DstLang + ":\n" + Text;
 
-    string escapedSystemMsg = GPT_JsonEscape(systemMsg);
-    string escapedUserMsg = GPT_JsonEscape(userMsg);
+    string escapedSystemMsg = JsonEscape(systemMsg);
+    string escapedUserMsg = JsonEscape(userMsg);
 
     string requestData = "{\"model\":\"" + GPT_selected_model + "\"," 
                          "\"messages\":[{\"role\":\"system\",\"content\":\"" + escapedSystemMsg + "\"}," 
                          "{\"role\":\"user\",\"content\":\"" + escapedUserMsg + "\"}]}";
 
     string headers = "Authorization: Bearer " + GPT_api_key + "\nContent-Type: application/json";
-    int delayInt = GPT_ParseInt(GPT_delay_ms);
-    int retryModeInt = GPT_ParseInt(GPT_retry_mode);
+    int delayInt = ParseInt(GPT_delay_ms);
+    int retryModeInt = ParseInt(GPT_retry_mode);
     string response = "";
     int attempts = 0;
     while (true) {
@@ -580,14 +580,14 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
     if (response == "") {
         string failureMessage = "Translation request failed. Please check network connection or API Key.";
         HostPrintUTF8(failureMessage + "\n");
-        return GPT_WC_FormatFailureTranslation("", failureMessage);
+        return FormatFailureTranslation("", failureMessage);
     }
 
     JsonReader Reader;
     JsonValue Root;
     if (!Reader.parse(response, Root)) {
         HostPrintUTF8("Failed to parse API response.\n");
-        return GPT_WC_FormatFailureTranslation(response, "Failed to parse API response.");
+        return FormatFailureTranslation(response, "Failed to parse API response.");
     }
 
     JsonValue choices = Root["choices"];
@@ -618,14 +618,14 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
         Root["error"]["message"].isString()) {
         string errorMessage = Root["error"]["message"].asString();
         HostPrintUTF8("API Error: " + errorMessage + "\n");
-        return GPT_WC_FormatFailureTranslation(response, "API Error: " + errorMessage);
+        return FormatFailureTranslation(response, "API Error: " + errorMessage);
     } else {
         HostPrintUTF8("Translation failed. Please check input parameters or API Key configuration.\n");
-        return GPT_WC_FormatFailureTranslation(response, "Translation failed. Please check input parameters or API Key configuration.");
+        return FormatFailureTranslation(response, "Translation failed. Please check input parameters or API Key configuration.");
     }
 }
 
-string GPT_WC_FormatFailureTranslation(const string &in rawResponse, const string &in fallbackMessage) {
+string FormatFailureTranslation(const string &in rawResponse, const string &in fallbackMessage) {
     string detail = rawResponse.Trim();
     if (detail == "")
         detail = fallbackMessage;
@@ -635,7 +635,7 @@ string GPT_WC_FormatFailureTranslation(const string &in rawResponse, const strin
 // Plugin Initialization
 void OnInitialize() {
     HostPrintUTF8("ChatGPT translation plugin loaded.\n");
-    GPT_RefreshConfiguration();
+    RefreshConfiguration();
     if (GPT_api_key != "") {
         HostPrintUTF8("Saved API Key, model name, and API URL loaded.\n");
     }
