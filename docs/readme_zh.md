@@ -31,9 +31,6 @@
 <div>
   <h2>📑 目录</h2>
   <ol>
-    <li><a href="#关于项目-">关于项目</a></li>
-    <li><a href="#视频教程-">视频教程</a></li>
-    <li><a href="#技术栈-">技术栈</a></li>
     <li>
       <a href="#安装-">安装</a>
       <ol>
@@ -41,6 +38,9 @@
         <li><a href="#手动安装-">手动安装</a></li>
       </ol>
     </li>
+    <li><a href="#关于项目-">关于项目</a></li>
+    <li><a href="#视频教程-">视频教程</a></li>
+    <li><a href="#技术栈-">技术栈</a></li>
     <li><a href="#配置-">配置</a></li>
     <li><a href="#使用方法-">使用方法</a></li>
     <li><a href="#开发计划-">开发计划</a></li>
@@ -50,6 +50,41 @@
     <li><a href="#致谢-">致谢</a></li>
   </ol>
 </div>
+
+---
+
+## 安装 📦
+
+### 全自动安装（推荐） ⚡
+
+1. **下载安装程序：**  
+   [安装程序](https://github.com/Felix3322/PotPlayer_ChatGPT_Translate/releases/latest)  
+   *(安装程序是开源的，你可以查看其源码)*
+2. **运行安装程序：**
+   - 双击 installer.exe 启动安装。
+   - 如有提示，请授予管理员权限。
+   - 安装程序会自动检测 PotPlayer 的 `Extension\Subtitle\Translate` 目录，如有自定义路径请确认或手动选择。
+   - 选择插件版本（有上下文 / 无上下文）。
+   - 配置模型、API 地址与 API Key（若接口无需 API Key，可留空以使用 `nullkey`）。
+   - 安装程序可选择注册卸载项，方便后续清理插件。
+   - 如果安装器已经写入默认配置，在你未在 PotPlayer 面板中重新调整之前会继续使用这些配置；一旦在面板中修改，将始终以面板设置为准。
+
+### 手动安装 🔧
+
+1. **下载 ZIP 文件：**  
+   从本仓库下载最新的 ZIP 文件。
+2. **解压 ZIP 文件：**  
+   将内容解压到临时文件夹中。
+3. **复制文件：**  
+   将 `ChatGPTSubtitleTranslate.as` 和 `ChatGPTSubtitleTranslate.ico` 复制到以下目录：
+   
+   ```
+   C:\Program Files\DAUM\PotPlayer\Extension\Subtitle\Translate
+   ```
+   
+   如果你的 PotPlayer 安装在其他位置，请将 `C:\Program Files\DAUM\PotPlayer` 替换为相应路径。
+
+<p align="right">(<a href="#readme-top">返回顶部</a>)</p>
 
 ---
 
@@ -111,41 +146,6 @@
 - **AngleScript** – 用于开发插件的脚本语言  
 - **ChatGPT API** – 提供上下文感知的翻译功能  
 - **PotPlayer API** – 实现与 PotPlayer 的无缝集成
-
-<p align="right">(<a href="#readme-top">返回顶部</a>)</p>
-
----
-
-## 安装 📦
-
-### 全自动安装（推荐） ⚡
-
-1. **下载安装程序：**  
-   [安装程序](https://github.com/Felix3322/PotPlayer_ChatGPT_Translate/releases/latest)  
-   *(安装程序是开源的，你可以查看其源码)*
-2. **运行安装程序：**
-   - 双击 installer.exe 启动安装。
-   - 如有提示，请授予管理员权限。
-   - 安装程序会自动检测 PotPlayer 的 `Extension\Subtitle\Translate` 目录，如有自定义路径请确认或手动选择。
-   - 选择插件版本（有上下文 / 无上下文）。
-   - 配置模型、API 地址与 API Key（若接口无需 API Key，可留空以使用 `nullkey`）。
-   - 安装程序可选择注册卸载项，方便后续清理插件。
-   - 如果安装器已经写入默认配置，在你未在 PotPlayer 面板中重新调整之前会继续使用这些配置；一旦在面板中修改，将始终以面板设置为准。
-
-### 手动安装 🔧
-
-1. **下载 ZIP 文件：**  
-   从本仓库下载最新的 ZIP 文件。
-2. **解压 ZIP 文件：**  
-   将内容解压到临时文件夹中。
-3. **复制文件：**  
-   将 `ChatGPTSubtitleTranslate.as` 和 `ChatGPTSubtitleTranslate.ico` 复制到以下目录：
-   
-   ```
-   C:\Program Files\DAUM\PotPlayer\Extension\Subtitle\Translate
-   ```
-   
-   如果你的 PotPlayer 安装在其他位置，请将 `C:\Program Files\DAUM\PotPlayer` 替换为相应路径。
 
 <p align="right">(<a href="#readme-top">返回顶部</a>)</p>
 
