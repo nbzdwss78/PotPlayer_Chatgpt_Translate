@@ -47,7 +47,6 @@
     <li><a href="#about-the-project-">About The Project</a></li>
     <li><a href="#video-tutorial-">Video Tutorial</a></li>
     <li><a href="#built-with-">Built With</a></li>
-    <li><a href="#configuration-">Configuration</a></li>
     <li><a href="#usage-">Usage</a></li>
     <li><a href="#roadmap-">Roadmap</a></li>
     <li><a href="#contributing-">Contributing</a></li>
@@ -66,14 +65,34 @@
 1. **Download the Installer:**  
    [Installer](https://github.com/Felix3322/PotPlayer_ChatGPT_Translate/releases/latest)  
    *(The installer is open source, so you can review the source code)*
-2. **Run the Installer:**
-   - Double-click `installer.exe` to start the installation.
-   - Grant administrator privileges when prompted.
-   - The PyQt6 wizard auto-detects your PotPlayer `Extension\Subtitle\Translate` folder; confirm the path if you customized the install location.
-   - Choose the plugin variant (with context or without context).
-   - Configure the model, API endpoint, and API key (leave the key blank for endpoints that support `nullkey`).
-   - The installer can register an uninstaller entry to cleanly remove the plugin later.
-   - Installer-provided defaults remain active until you update the plugin inside PotPlayer; any settings changed in the panel will always take priority over the installer values.
+2. **Run the Installer (`installer.exe`):**
+   - Double-click `installer.exe` to start.
+   - Approve the **administrator prompt** if Windows asks for permission.
+3. **Confirm the PotPlayer Plugin Folder:**
+   - The wizard auto-detects your PotPlayer install path.
+   - Verify the target folder is:  
+     `...\PotPlayer\Extension\Subtitle\Translate`
+   - If you installed PotPlayer to a custom location, browse to the correct `Translate` folder.
+4. **Choose the Plugin Variant:**
+   - **With context** (better translation quality, slightly higher latency).
+   - **Without context** (faster, less contextual awareness).
+5. **Configure Model & API Endpoint:**
+   - **Model Name:** enter the model ID (example: `gpt-4.1-nano`).
+   - **Custom API base URL (optional):** use `ModelName|API Base URL`.
+   - **No-key endpoints:** leave the key blank and verify; the installer will inject `nullkey` after a successful empty-key test.
+6. **Enter API Key (if required):**
+   - Paste your API key into the installer field.
+   - If your endpoint does **not** require a key, leave it blank and use **Verify** to test an empty key; on success, the installer will inject `nullkey`.
+7. **Finalize Installation:**
+   - Click **Install** to copy the files.
+   - Optionally register the **uninstaller** entry to cleanly remove the plugin later.
+   - Note: installer defaults are written once; any later changes in PotPlayer’s panel will override the installer values.
+
+**After installation, verify settings in PotPlayer:**
+1. **Open PotPlayer Preferences:** press **F5**.
+2. **Navigate to Extensions:** **Extensions > Subtitle translation**.
+3. **Select the plugin:** choose **ChatGPT Translate**.
+4. **Set source/target languages** as needed.
 
 ### Manual Installation 🔧
 
@@ -87,9 +106,106 @@
    C:\Program Files\DAUM\PotPlayer\Extension\Subtitle\Translate
    ```
    Replace `C:\Program Files\DAUM\PotPlayer` with your custom PotPlayer installation path if necessary.
+4. **Configure PotPlayer After Copying:**
+   1. Open PotPlayer **Preferences** (press **F5**).
+   2. Go to **Extensions > Subtitle translation**.
+   3. Select **ChatGPT Translate**.
+   4. Configure **Model Name**, **API URL**, and **API Key** as needed.
+   5. Set **source** and **target** languages.
 
 > ℹ️ **If you switch between the context-aware and no-context scripts, replace both `.as` files together.**
 > Older copies that used the shared `FormatFailureTranslation` name can cause PotPlayer to report a conflict on whichever script loads first (often the standard context version). The current files use uniquely prefixed helpers to avoid this.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+---
+
+### Configuration Reference ⚙️
+
+1. **Model Name:**  
+   You can simply enter the model name, which will use the default API URL.  
+   **Example:**  
+   ```
+   gpt-4.1-nano
+   ```  
+   
+   Alternatively, specify a custom API URL using the following format:  
+   ```
+   ModelName|API Base URL
+   ```  
+   **Example:**  
+   ```
+   gpt-4.1-nano|https://api.openai.com/v1/chat/completions
+   ```  
+   
+   > **Note:**  
+   > In version **v1.5** and later, if you're using a self-hosted or third-party API that does not require an API key, you can add `nullkey` at the end:  
+   > ```
+   > gpt-4.1-nano|nullkey
+   > ```
+   > or:  
+   > ```
+   > qwen2.5:7b|http://127.0.0.1:11434/v1/chat/completions|nullkey
+   > ```
+   >
+   > **Optional tuning parameters (v1.7+):**  
+   > Append extra tokens separated by `|`:  
+   > - `delay_ms` (digits only): add a delay before each request  
+   > - `retryN` (N = 0–3): retry mode  
+   >   - `retry0`: no retry  
+   >   - `retry1`: one extra attempt on empty response  
+   >   - `retry2`: keep retrying until a response (no delay)  
+   >   - `retry3`: keep retrying, with delay before every attempt  
+   > - `cache=auto` / `cache=off`: context cache mode (context version only; auto falls back to chat if unsupported)  
+   >
+   > Example with all options:  
+   > ```
+   > gpt-4.1-nano|https://api.openai.com/v1/chat/completions|nullkey|500|retry1|cache=auto
+   > ```
+
+2. **API Key:**  
+   Enter your API key if needed.  
+   If your endpoint does not require a key, verify with a blank field; the installer will inject `nullkey` only after a successful empty-key test.  
+   > You can test your API key using **[keytest.obanarchy.org](https://keytest.obanarchy.org/)** to ensure it is valid.
+
+3. **Set the Source and Target Languages:**  
+   Configure the source and target languages as required.
+
+---
+
+#### Available Models (Examples)
+
+Use the format:  
+```
+ModelName|API Base URL|nullkey (optional)|delay_ms (optional)|retryN (optional)|cache=auto/off (optional)
+```
+
+Here is a list of supported models:
+
+```
+Deepseek: deepseek-chat|https://api.deepseek.com/v1/chat/completions
+Tongyi Qianwen: qwen-plus|https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions
+SiliconFlow: siliconflow-chat|https://api.siliconflow.cn/v1/chat/completions
+ERNIE Bot (Wenxin Yiyan): ernie-4.0-turbo-8k|https://qianfan.baidubce.com/v2/chat/completions
+Gemini: gemini-2.0-flash|https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
+ChatGLM: chatglm-6b|https://api.chatglm.cn/v1/chat/completions
+LLaMA: llama-13b|https://api.llama.ai/v1/chat/completions
+Code LLaMA: code-llama-34b|https://api.llama.ai/v1/code/completions
+OpenAI GPT-4o: gpt-4o|https://api.openai.com/v1/chat/completions
+OpenAI GPT-4 Turbo: gpt-4-turbo|https://api.openai.com/v1/chat/completions
+OpenAI GPT-3.5 Turbo: gpt-3.5-turbo|https://api.openai.com/v1/chat/completions
+Claude 3 Sonnet: claude-3-sonnet-20240229|https://api.anthropic.com/v1/messages
+Mistral Large: mistral-large|https://api.mistral.ai/v1/chat/completions
+Groq Llama 3: llama3-70b-8192|https://api.groq.com/openai/v1/chat/completions
+Perplexity Sonar Large: pplx-70b-online|https://api.perplexity.ai/chat/completions
+Fireworks Mixtral: accounts/fireworks/models/mixtral-8x7b-instruct|https://api.fireworks.ai/inference/v1/chat/completions
+Moonshot v1: moonshot-v1-128k|https://api.moonshot.cn/v1/chat/completions
+Yi 34B Chat: yi-34b-chat|https://api.lingyi.ai/v1/chat/completions
+Local Deployment (no API key): model-name|http://127.0.0.1:PORT/v1/chat/completions|nullkey
+```
+Model names in the installer are shown in your chosen language whenever possible.
+
+You can expand or replace these with any OpenAI-compatible model that supports the chat/completions endpoint.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -153,106 +269,6 @@ Click below to watch the tutorial on Bilibili:
 - **AngleScript** – The scripting language used to develop the plugin  
 - **ChatGPT API** – Provides context-aware translation capabilities  
 - **PotPlayer API** – Enables seamless integration with PotPlayer
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
----
-
-## Configuration ⚙️
-
-1. **Open PotPlayer's Preferences:**  
-   Press **F5** to open the PotPlayer **Preferences**.
-
-2. **Navigate to Extensions:**  
-   Go to **Extensions > Subtitle translation**.
-
-3. **Select the Translation Plugin:**  
-   Choose **ChatGPT Translate** as the translation plugin.
-
-4. **Configure the Plugin:**  
-   - **Model Name:**  
-     You can simply enter the model name, which will use the default API URL.  
-     **Example:**  
-     ```
-     gpt-4.1-nano
-     ```  
-     
-     Alternatively, specify a custom API URL using the following format:  
-     ```
-     ModelName|API Base URL
-     ```  
-     **Example:**  
-     ```
-     gpt-4.1-nano|https://api.openai.com/v1/chat/completions
-     ```  
-     
-     > **Note:**  
-     > In version **v1.5** and later, if you're using a self-hosted or third-party API that does not require an API key, you can add `nullkey` at the end:  
-     > ```
-     > gpt-4.1-nano|nullkey
-     > ```
-     > or:  
-     > ```
-     > qwen2.5:7b|http://127.0.0.1:11434/v1/chat/completions|nullkey
-     > ```
-     >
-     > **Optional tuning parameters (v1.7+):**  
-     > Append extra tokens separated by `|`:  
-     > - `delay_ms` (digits only): add a delay before each request  
-     > - `retryN` (N = 0–3): retry mode  
-     >   - `retry0`: no retry  
-     >   - `retry1`: one extra attempt on empty response  
-     >   - `retry2`: keep retrying until a response (no delay)  
-     >   - `retry3`: keep retrying, with delay before every attempt  
-     > - `cache=auto` / `cache=off`: context cache mode (context version only; auto falls back to chat if unsupported)  
-     >
-     > Example with all options:  
-     > ```
-     > gpt-4.1-nano|https://api.openai.com/v1/chat/completions|nullkey|500|retry1|cache=auto
-     > ```
-
-   - **API Key:**  
-     Enter your API key if needed.  
-     > You can test your API key using **[keytest.obanarchy.org](https://keytest.obanarchy.org/)** to ensure it is valid.
-
-5. **Set the Source and Target Languages:**  
-   Configure the source and target languages as required.
-
----
-
-### Available Models (Examples)
-
-Use the format:  
-```
-ModelName|API Base URL|nullkey (optional)|delay_ms (optional)|retryN (optional)|cache=auto/off (optional)
-```
-
-Here is a list of supported models:
-
-```
-Deepseek: deepseek-chat|https://api.deepseek.com/v1/chat/completions
-Tongyi Qianwen: qwen-plus|https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions
-SiliconFlow: siliconflow-chat|https://api.siliconflow.cn/v1/chat/completions
-ERNIE Bot (Wenxin Yiyan): ernie-4.0-turbo-8k|https://qianfan.baidubce.com/v2/chat/completions
-Gemini: gemini-2.0-flash|https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
-ChatGLM: chatglm-6b|https://api.chatglm.cn/v1/chat/completions
-LLaMA: llama-13b|https://api.llama.ai/v1/chat/completions
-Code LLaMA: code-llama-34b|https://api.llama.ai/v1/code/completions
-OpenAI GPT-4o: gpt-4o|https://api.openai.com/v1/chat/completions
-OpenAI GPT-4 Turbo: gpt-4-turbo|https://api.openai.com/v1/chat/completions
-OpenAI GPT-3.5 Turbo: gpt-3.5-turbo|https://api.openai.com/v1/chat/completions
-Claude 3 Sonnet: claude-3-sonnet-20240229|https://api.anthropic.com/v1/messages
-Mistral Large: mistral-large|https://api.mistral.ai/v1/chat/completions
-Groq Llama 3: llama3-70b-8192|https://api.groq.com/openai/v1/chat/completions
-Perplexity Sonar Large: pplx-70b-online|https://api.perplexity.ai/chat/completions
-Fireworks Mixtral: accounts/fireworks/models/mixtral-8x7b-instruct|https://api.fireworks.ai/inference/v1/chat/completions
-Moonshot v1: moonshot-v1-128k|https://api.moonshot.cn/v1/chat/completions
-Yi 34B Chat: yi-34b-chat|https://api.lingyi.ai/v1/chat/completions
-Local Deployment (no API key): model-name|http://127.0.0.1:PORT/v1/chat/completions|nullkey
-```
-Model names in the installer are shown in your chosen language whenever possible.
-
-You can expand or replace these with any OpenAI-compatible model that supports the chat/completions endpoint.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

@@ -41,7 +41,6 @@
     <li><a href="#关于项目-">关于项目</a></li>
     <li><a href="#视频教程-">视频教程</a></li>
     <li><a href="#技术栈-">技术栈</a></li>
-    <li><a href="#配置-">配置</a></li>
     <li><a href="#使用方法-">使用方法</a></li>
     <li><a href="#开发计划-">开发计划</a></li>
     <li><a href="#贡献指南-">贡献指南</a></li>
@@ -60,14 +59,34 @@
 1. **下载安装程序：**  
    [安装程序](https://github.com/Felix3322/PotPlayer_ChatGPT_Translate/releases/latest)  
    *(安装程序是开源的，你可以查看其源码)*
-2. **运行安装程序：**
-   - 双击 installer.exe 启动安装。
+2. **运行安装程序（`installer.exe`）：**
+   - 双击 `installer.exe` 启动。
    - 如有提示，请授予管理员权限。
-   - 安装程序会自动检测 PotPlayer 的 `Extension\Subtitle\Translate` 目录，如有自定义路径请确认或手动选择。
-   - 选择插件版本（有上下文 / 无上下文）。
-   - 配置模型、API 地址与 API Key（若接口无需 API Key，可留空以使用 `nullkey`）。
-   - 安装程序可选择注册卸载项，方便后续清理插件。
-   - 如果安装器已经写入默认配置，在你未在 PotPlayer 面板中重新调整之前会继续使用这些配置；一旦在面板中修改，将始终以面板设置为准。
+3. **确认插件目录：**
+   - 安装器会自动检测 PotPlayer 安装路径。
+   - 确认目标目录为：  
+     `...\PotPlayer\Extension\Subtitle\Translate`
+   - 若你安装在自定义路径，请手动选择正确的 `Translate` 目录。
+4. **选择插件版本：**
+   - **有上下文**（翻译质量更好，延迟略高）。
+   - **无上下文**（速度更快，连贯性略弱）。
+5. **配置模型与 API 地址：**
+   - **模型名称：**填写模型 ID（例如：`gpt-4.1-nano`）。
+   - **自定义 API 地址（可选）：**使用 `模型名称|API 地址` 的格式。
+   - **无需 Key 的接口：**请先留空并进行验证，验证通过后会写入 `nullkey`。
+6. **输入 API Key（如需要）：**
+   - 将 API Key 粘贴到输入框。
+   - 若接口无需 Key，请留空并点击 **验证**，通过后安装器会写入 `nullkey`。
+7. **完成安装：**
+   - 点击 **Install** 复制文件。
+   - 可选择写入卸载信息，方便后续卸载。
+   - 注意：安装器写入的默认配置只会写入一次；之后在 PotPlayer 面板中修改会覆盖安装器默认值。
+
+**安装后请在 PotPlayer 中核对设置：**
+1. **打开 PotPlayer 首选项：**按 **F5**。
+2. **进入扩展设置：**选择 **扩展 > 字幕翻译**。
+3. **选择插件：**选中 **ChatGPT 翻译**。
+4. **设置源语言与目标语言**。
 
 ### 手动安装 🔧
 
@@ -83,6 +102,103 @@
    ```
    
    如果你的 PotPlayer 安装在其他位置，请将 `C:\Program Files\DAUM\PotPlayer` 替换为相应路径。
+4. **在 PotPlayer 中配置：**
+   1. 打开 PotPlayer **首选项**（按 **F5**）。
+   2. 进入 **扩展 > 字幕翻译**。
+   3. 选择 **ChatGPT 翻译**。
+   4. 按需配置 **模型名称**、**API 地址** 与 **API Key**。
+   5. 设置**源语言**与**目标语言**。
+
+<p align="right">(<a href="#readme-top">返回顶部</a>)</p>
+
+---
+
+### 配置参考 ⚙️
+
+1. **模型名称：**  
+   你可以仅输入模型名称，这时会使用默认的 API 接口 URL。  
+   **示例：**  
+   ```
+   gpt-4.1-nano
+   ```  
+   
+   或者，你也可以通过指定自定义 API 接口 URL，格式为：  
+   ```
+   模型名称|API 地址
+   ```  
+   **示例：**  
+   ```
+   gpt-4.1-nano|https://api.openai.com/v1/chat/completions
+   ```  
+   
+   > **备注：**  
+   > 在新版插件中（版本 1.5），如果需要支持第三方 API 接口且不使用 API Key，可以在第二个参数中填写 `nullkey`。例如：  
+   > ```
+   > gpt-4.1-nano|nullkey
+   > ```
+   > 或者：
+   > ```
+   > qwen2.5:7b|http://127.0.0.1:11434/v1/chat/completions|nullkey
+   > ```
+   >
+   > **可选参数（v1.7+）：**  
+   > 通过 `|` 追加：  
+   > - `delay_ms`（纯数字）：每次请求前等待的毫秒数  
+   > - `retryN`（N = 0–3）：重试模式  
+   >   - `retry0`：不重试  
+   >   - `retry1`：空响应时再尝试一次  
+   >   - `retry2`：持续重试直到有响应（无延迟）  
+   >   - `retry3`：持续重试且每次都等待延迟  
+   > - `cache=auto` / `cache=off`：上下文缓存模式（仅上下文版本适用；auto 不支持时自动回退到 chat）  
+   >
+   > 完整示例：  
+   > ```
+   > gpt-4.1-nano|https://api.openai.com/v1/chat/completions|nullkey|500|retry1|cache=auto
+   > ```
+
+2. **API Key：**  
+   输入你的 API Key。  
+   若接口无需 Key，可留空并通过安装器验证空 Key；验证通过后会写入 `nullkey`。  
+   > 你可以使用 **[keytest.obanarchy.org](https://keytest.obanarchy.org/)** 测试 API Key 是否有效。
+
+3. **设置源语言和目标语言：**  
+   根据需要配置字幕的源语言和目标语言。
+
+---
+
+#### 模型填写示例列表
+
+使用格式如下：  
+```
+模型名称|API 地址|nullkey（可选）|delay_ms（可选）|retryN（可选）|cache=auto/off（可选）
+```
+
+以下是已支持或可用的模型接口示例：
+
+```
+Deepseek: deepseek-chat|https://api.deepseek.com/v1/chat/completions
+通义千问: qwen-plus|https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions
+硅基流动: siliconflow-chat|https://api.siliconflow.cn/v1/chat/completions
+文心一言: ernie-4.0-turbo-8k|https://qianfan.baidubce.com/v2/chat/completions
+Gemini: gemini-2.0-flash|https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
+ChatGLM: chatglm-6b|https://api.chatglm.cn/v1/chat/completions
+LLaMA: llama-13b|https://api.llama.ai/v1/chat/completions
+Code LLaMA: code-llama-34b|https://api.llama.ai/v1/code/completions
+OpenAI GPT-4o: gpt-4o|https://api.openai.com/v1/chat/completions
+OpenAI GPT-4 Turbo: gpt-4-turbo|https://api.openai.com/v1/chat/completions
+OpenAI GPT-3.5 Turbo: gpt-3.5-turbo|https://api.openai.com/v1/chat/completions
+Claude 3 Sonnet: claude-3-sonnet-20240229|https://api.anthropic.com/v1/messages
+Mistral Large: mistral-large|https://api.mistral.ai/v1/chat/completions
+Groq Llama 3: llama3-70b-8192|https://api.groq.com/openai/v1/chat/completions
+Perplexity Sonar Large: pplx-70b-online|https://api.perplexity.ai/chat/completions
+Fireworks Mixtral: accounts/fireworks/models/mixtral-8x7b-instruct|https://api.fireworks.ai/inference/v1/chat/completions
+Moonshot v1: moonshot-v1-128k|https://api.moonshot.cn/v1/chat/completions
+Yi 34B Chat: yi-34b-chat|https://api.lingyi.ai/v1/chat/completions
+本地部署（无需 API Key）：模型名称|http://127.0.0.1:端口/v1/chat/completions|nullkey
+```
+
+你也可以根据需要扩展其他兼容 OpenAI 接口的模型，确保它们支持 `chat/completions` 接口。
+
 
 <p align="right">(<a href="#readme-top">返回顶部</a>)</p>
 
@@ -146,106 +262,6 @@
 - **AngleScript** – 用于开发插件的脚本语言  
 - **ChatGPT API** – 提供上下文感知的翻译功能  
 - **PotPlayer API** – 实现与 PotPlayer 的无缝集成
-
-<p align="right">(<a href="#readme-top">返回顶部</a>)</p>
-
----
-
-## 配置 ⚙️
-
-1. **打开 PotPlayer 的设置：**  
-   按下 **F5** 打开 PotPlayer 的 **首选项**。
-
-2. **导航至扩展设置：**  
-   依次选择 **扩展 > 字幕翻译**。
-
-3. **选择翻译插件：**  
-   选择 **ChatGPT 翻译** 作为翻译插件。
-
-4. **配置插件：**  
-   - **Model Name（模型名称）：**  
-     你可以仅输入模型名称，这时会使用默认的 API 接口 URL。  
-     **示例：**  
-     ```
-     gpt-4.1-nano
-     ```  
-     
-     或者，你也可以通过指定自定义 API 接口 URL，格式为：  
-     ```
-     模型名称|API 提供商
-     ```  
-     **示例：**  
-     ```
-     gpt-4.1-nano|https://api.openai.com/v1/chat/completions
-     ```  
-     
-     > **备注：**  
-     > 在新版插件中（版本 1.5），如果需要支持第三方 API 接口且不使用 API Key，可以在第二个参数中填写 `nullkey`。例如：  
-     > ```
-     > gpt-4.1-nano|nullkey
-     > ```
-     > 或者：
-     > ```
-     > qwen2.5:7b|http://127.0.0.1:11434/v1/chat/completions|nullkey
-     > ```
-     >
-     > **可选参数（v1.7+）：**  
-     > 通过 `|` 追加：  
-     > - `delay_ms`（纯数字）：每次请求前等待的毫秒数  
-     > - `retryN`（N = 0–3）：重试模式  
-     >   - `retry0`：不重试  
-     >   - `retry1`：空响应时再尝试一次  
-     >   - `retry2`：持续重试直到有响应（无延迟）  
-     >   - `retry3`：持续重试且每次都等待延迟  
-     > - `cache=auto` / `cache=off`：上下文缓存模式（仅上下文版本适用；auto 不支持时自动回退到 chat）  
-     >
-     > 完整示例：  
-     > ```
-     > gpt-4.1-nano|https://api.openai.com/v1/chat/completions|nullkey|500|retry1|cache=auto
-     > ```
-
-   - **API Key：**  
-     输入你的 API Key。  
-     > 你可以使用 **[keytest.obanarchy.org](https://keytest.obanarchy.org/)** 测试 API Key 是否有效。
-
-5. **设置源语言和目标语言：**  
-   根据需要配置字幕的源语言和目标语言。
-
----
-
-### 模型填写示例列表
-
-使用格式如下：  
-```
-模型名称|API 地址|nullkey（可选）|delay_ms（可选）|retryN（可选）|cache=auto/off（可选）
-```
-
-以下是已支持或可用的模型接口示例：
-
-```
-Deepseek: deepseek-chat|https://api.deepseek.com/v1/chat/completions
-通义千问: qwen-plus|https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions
-硅基流动: siliconflow-chat|https://api.siliconflow.cn/v1/chat/completions
-文心一言: ernie-4.0-turbo-8k|https://qianfan.baidubce.com/v2/chat/completions
-Gemini: gemini-2.0-flash|https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
-ChatGLM: chatglm-6b|https://api.chatglm.cn/v1/chat/completions
-LLaMA: llama-13b|https://api.llama.ai/v1/chat/completions
-Code LLaMA: code-llama-34b|https://api.llama.ai/v1/code/completions
-OpenAI GPT-4o: gpt-4o|https://api.openai.com/v1/chat/completions
-OpenAI GPT-4 Turbo: gpt-4-turbo|https://api.openai.com/v1/chat/completions
-OpenAI GPT-3.5 Turbo: gpt-3.5-turbo|https://api.openai.com/v1/chat/completions
-Claude 3 Sonnet: claude-3-sonnet-20240229|https://api.anthropic.com/v1/messages
-Mistral Large: mistral-large|https://api.mistral.ai/v1/chat/completions
-Groq Llama 3: llama3-70b-8192|https://api.groq.com/openai/v1/chat/completions
-Perplexity Sonar Large: pplx-70b-online|https://api.perplexity.ai/chat/completions
-Fireworks Mixtral: accounts/fireworks/models/mixtral-8x7b-instruct|https://api.fireworks.ai/inference/v1/chat/completions
-Moonshot v1: moonshot-v1-128k|https://api.moonshot.cn/v1/chat/completions
-Yi 34B Chat: yi-34b-chat|https://api.lingyi.ai/v1/chat/completions
-本地部署（无需 API Key）：模型名称|http://127.0.0.1:端口/v1/chat/completions|nullkey
-```
-
-你也可以根据需要扩展其他兼容 OpenAI 接口的模型，确保它们支持 `chat/completions` 接口。
-
 
 <p align="right">(<a href="#readme-top">返回顶部</a>)</p>
 
