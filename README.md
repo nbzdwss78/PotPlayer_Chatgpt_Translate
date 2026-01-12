@@ -37,9 +37,6 @@
 <div>
   <h2>📑 Table of Contents</h2>
   <ol>
-    <li><a href="#about-the-project-">About The Project</a></li>
-    <li><a href="#video-tutorial-">Video Tutorial</a></li>
-    <li><a href="#built-with-">Built With</a></li>
     <li>
       <a href="#installation-">Installation</a>
       <ol>
@@ -47,6 +44,9 @@
         <li><a href="#manual-installation-">Manual Installation</a></li>
       </ol>
     </li>
+    <li><a href="#about-the-project-">About The Project</a></li>
+    <li><a href="#video-tutorial-">Video Tutorial</a></li>
+    <li><a href="#built-with-">Built With</a></li>
     <li><a href="#configuration-">Configuration</a></li>
     <li><a href="#usage-">Usage</a></li>
     <li><a href="#roadmap-">Roadmap</a></li>
@@ -56,6 +56,42 @@
     <li><a href="#acknowledgments-">Acknowledgments</a></li>
   </ol>
 </div>
+
+---
+
+## Installation 📦
+
+### Fully Automatic Installation (Recommended) ⚡
+
+1. **Download the Installer:**  
+   [Installer](https://github.com/Felix3322/PotPlayer_ChatGPT_Translate/releases/latest)  
+   *(The installer is open source, so you can review the source code)*
+2. **Run the Installer:**
+   - Double-click `installer.exe` to start the installation.
+   - Grant administrator privileges when prompted.
+   - The PyQt6 wizard auto-detects your PotPlayer `Extension\Subtitle\Translate` folder; confirm the path if you customized the install location.
+   - Choose the plugin variant (with context or without context).
+   - Configure the model, API endpoint, and API key (leave the key blank for endpoints that support `nullkey`).
+   - The installer can register an uninstaller entry to cleanly remove the plugin later.
+   - Installer-provided defaults remain active until you update the plugin inside PotPlayer; any settings changed in the panel will always take priority over the installer values.
+
+### Manual Installation 🔧
+
+1. **Download the ZIP File:**  
+   Download the latest ZIP file from this repository.
+2. **Extract the ZIP File:**  
+   Extract the contents to a temporary folder.
+3. **Copy Files:**  
+   Copy `ChatGPTSubtitleTranslate.as` and `ChatGPTSubtitleTranslate.ico` to the following directory:
+   ```
+   C:\Program Files\DAUM\PotPlayer\Extension\Subtitle\Translate
+   ```
+   Replace `C:\Program Files\DAUM\PotPlayer` with your custom PotPlayer installation path if necessary.
+
+> ℹ️ **If you switch between the context-aware and no-context scripts, replace both `.as` files together.**
+> Older copies that used the shared `FormatFailureTranslation` name can cause PotPlayer to report a conflict on whichever script loads first (often the standard context version). The current files use uniquely prefixed helpers to avoid this.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
@@ -117,42 +153,6 @@ Click below to watch the tutorial on Bilibili:
 - **AngleScript** – The scripting language used to develop the plugin  
 - **ChatGPT API** – Provides context-aware translation capabilities  
 - **PotPlayer API** – Enables seamless integration with PotPlayer
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
----
-
-## Installation 📦
-
-### Fully Automatic Installation (Recommended) ⚡
-
-1. **Download the Installer:**  
-   [Installer](https://github.com/Felix3322/PotPlayer_ChatGPT_Translate/releases/latest)  
-   *(The installer is open source, so you can review the source code)*
-2. **Run the Installer:**
-   - Double-click `installer.exe` to start the installation.
-   - Grant administrator privileges when prompted.
-   - The PyQt6 wizard auto-detects your PotPlayer `Extension\Subtitle\Translate` folder; confirm the path if you customized the install location.
-   - Choose the plugin variant (with context or without context).
-   - Configure the model, API endpoint, and API key (leave the key blank for endpoints that support `nullkey`).
-   - The installer can register an uninstaller entry to cleanly remove the plugin later.
-   - Installer-provided defaults remain active until you update the plugin inside PotPlayer; any settings changed in the panel will always take priority over the installer values.
-
-### Manual Installation 🔧
-
-1. **Download the ZIP File:**  
-   Download the latest ZIP file from this repository.
-2. **Extract the ZIP File:**  
-   Extract the contents to a temporary folder.
-3. **Copy Files:**  
-   Copy `ChatGPTSubtitleTranslate.as` and `ChatGPTSubtitleTranslate.ico` to the following directory:
-   ```
-   C:\Program Files\DAUM\PotPlayer\Extension\Subtitle\Translate
-   ```
-   Replace `C:\Program Files\DAUM\PotPlayer` with your custom PotPlayer installation path if necessary.
-
-> ℹ️ **If you switch between the context-aware and no-context scripts, replace both `.as` files together.**
-> Older copies that used the shared `FormatFailureTranslation` name can cause PotPlayer to report a conflict on whichever script loads first (often the standard context version). The current files use uniquely prefixed helpers to avoid this.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
