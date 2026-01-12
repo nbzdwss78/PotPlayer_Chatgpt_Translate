@@ -125,8 +125,11 @@
    *(安装程序是开源的，你可以查看其源码)*
 2. **运行安装程序：**
    - 双击 installer.exe 启动安装。
-   - 安装程序会自动检测你的 PotPlayer 安装路径并完成安装设置。
-   - 你可以选择验证模型、API 地址和 API Key，也可以跳过此步骤，安装器会尝试自动纠正常见配置错误。
+   - 如有提示，请授予管理员权限。
+   - 安装程序会自动检测 PotPlayer 的 `Extension\Subtitle\Translate` 目录，如有自定义路径请确认或手动选择。
+   - 选择插件版本（有上下文 / 无上下文）。
+   - 配置模型、API 地址与 API Key（若接口无需 API Key，可留空以使用 `nullkey`）。
+   - 安装程序可选择注册卸载项，方便后续清理插件。
    - 如果安装器已经写入默认配置，在你未在 PotPlayer 面板中重新调整之前会继续使用这些配置；一旦在面板中修改，将始终以面板设置为准。
 
 ### 手动安装 🔧
@@ -185,6 +188,21 @@
      > ```
      > qwen2.5:7b|http://127.0.0.1:11434/v1/chat/completions|nullkey
      > ```
+     >
+     > **可选参数（v1.7+）：**  
+     > 通过 `|` 追加：  
+     > - `delay_ms`（纯数字）：每次请求前等待的毫秒数  
+     > - `retryN`（N = 0–3）：重试模式  
+     >   - `retry0`：不重试  
+     >   - `retry1`：空响应时再尝试一次  
+     >   - `retry2`：持续重试直到有响应（无延迟）  
+     >   - `retry3`：持续重试且每次都等待延迟  
+     > - `cache=auto` / `cache=off`：上下文缓存模式（仅上下文版本适用；auto 不支持时自动回退到 chat）  
+     >
+     > 完整示例：  
+     > ```
+     > gpt-4.1-nano|https://api.openai.com/v1/chat/completions|nullkey|500|retry1|cache=auto
+     > ```
 
    - **API Key：**  
      输入你的 API Key。  
@@ -199,7 +217,7 @@
 
 使用格式如下：  
 ```
-模型名称|API 地址|nullkey（可选）
+模型名称|API 地址|nullkey（可选）|delay_ms（可选）|retryN（可选）|cache=auto/off（可选）
 ```
 
 以下是已支持或可用的模型接口示例：

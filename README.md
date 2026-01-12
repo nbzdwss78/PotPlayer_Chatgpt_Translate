@@ -131,9 +131,11 @@ Click below to watch the tutorial on Bilibili:
    *(The installer is open source, so you can review the source code)*
 2. **Run the Installer:**
    - Double-click `installer.exe` to start the installation.
-   - The PyQt6 wizard provides a modern, multi-language interface and automatically detects your PotPlayer path.
-   - You can verify or preconfigure your API model, URL and key, or simply skip this step; the wizard will try to auto-correct common mistakes.
-   - The optional `installer_qt.py` script from v1.5.2 can skip configuration when an existing installation is detected.
+   - Grant administrator privileges when prompted.
+   - The PyQt6 wizard auto-detects your PotPlayer `Extension\Subtitle\Translate` folder; confirm the path if you customized the install location.
+   - Choose the plugin variant (with context or without context).
+   - Configure the model, API endpoint, and API key (leave the key blank for endpoints that support `nullkey`).
+   - The installer can register an uninstaller entry to cleanly remove the plugin later.
    - Installer-provided defaults remain active until you update the plugin inside PotPlayer; any settings changed in the panel will always take priority over the installer values.
 
 ### Manual Installation 🔧
@@ -193,6 +195,21 @@ Click below to watch the tutorial on Bilibili:
      > ```
      > qwen2.5:7b|http://127.0.0.1:11434/v1/chat/completions|nullkey
      > ```
+     >
+     > **Optional tuning parameters (v1.7+):**  
+     > Append extra tokens separated by `|`:  
+     > - `delay_ms` (digits only): add a delay before each request  
+     > - `retryN` (N = 0–3): retry mode  
+     >   - `retry0`: no retry  
+     >   - `retry1`: one extra attempt on empty response  
+     >   - `retry2`: keep retrying until a response (no delay)  
+     >   - `retry3`: keep retrying, with delay before every attempt  
+     > - `cache=auto` / `cache=off`: context cache mode (context version only; auto falls back to chat if unsupported)  
+     >
+     > Example with all options:  
+     > ```
+     > gpt-4.1-nano|https://api.openai.com/v1/chat/completions|nullkey|500|retry1|cache=auto
+     > ```
 
    - **API Key:**  
      Enter your API key if needed.  
@@ -207,7 +224,7 @@ Click below to watch the tutorial on Bilibili:
 
 Use the format:  
 ```
-ModelName|API Base URL|nullkey (optional)
+ModelName|API Base URL|nullkey (optional)|delay_ms (optional)|retryN (optional)|cache=auto/off (optional)
 ```
 
 Here is a list of supported models:
