@@ -775,6 +775,7 @@ class ConfigPage(QtWidgets.QWizardPage):
 
         self.purchase_link = ""
         self.skip = False
+        self._empty_key_verified = False
 
     def initializePage(self):
         s = self.wizard.strings
@@ -844,6 +845,7 @@ class ConfigPage(QtWidgets.QWizardPage):
         self.key_edit.setText(stored_key)
         self.status.setText("")
         self.skip = False
+        self._empty_key_verified = False
 
     def on_model_change(self, name, initializing=False):
         if name == "Custom...":
@@ -870,20 +872,32 @@ class ConfigPage(QtWidgets.QWizardPage):
     def verify(self):
         s = self.wizard.strings
         api_key = self.key_edit.text().strip()
-        if not api_key:
-            self.status.setText(s["verify_success"])
-            return True
         self.status.setText(s["verifying"])
         QtWidgets.QApplication.processEvents()
+        if not api_key:
+            ok, msg = verify_api_settings(
+                self.model_edit.text().strip(),
+                self.api_edit.text().strip(),
+                "",
+            )
+            if ok:
+                self._empty_key_verified = True
+                self.status.setText(s["verify_empty_success"])
+                return True
+            self._empty_key_verified = False
+            self.status.setText(s["verify_fail"].format(msg))
+            return False
         ok, msg = verify_api_settings(
             self.model_edit.text().strip(),
             self.api_edit.text().strip(),
             api_key,
         )
         if ok:
+            self._empty_key_verified = False
             self.status.setText(msg or s["verify_success"])
             return True
         else:
+            self._empty_key_verified = False
             self.status.setText(s["verify_fail"].format(msg))
             return False
 
@@ -897,7 +911,11 @@ class ConfigPage(QtWidgets.QWizardPage):
         self.wizard.api_key = self.key_edit.text().strip()
         if self.skip:
             return True
-        return self.verify()
+        if not self.verify():
+            return False
+        if not self.wizard.api_key and self._empty_key_verified:
+            self.wizard.api_key = "nullkey"
+        return True
 
 class DelayPage(QtWidgets.QWizardPage):
     def __init__(self, wizard):
