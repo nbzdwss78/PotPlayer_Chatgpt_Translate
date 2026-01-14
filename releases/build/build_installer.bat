@@ -18,13 +18,13 @@ if %errorlevel% neq 0 (
 )
 
 REM --- Step 2: Build the installer ---
-echo "Building installer with PyInstaller..."
+echo "Building installer with PyInstaller (this may take a while)..."
 cd "%VENV_DIR%"
 "%VENV_PYTHON%" -m PyInstaller -F -w --clean --uac-admin --collect-all openai --collect-submodules httpx --collect-submodules anyio --distpath "%PROJECT_ROOT%\releases\latest" --name installer --icon "%PROJECT_ROOT%\icon.ico" --add-data "%PROJECT_ROOT%\SubtitleTranslate - ChatGPT.as;." --add-data "%PROJECT_ROOT%\SubtitleTranslate - ChatGPT.ico;." --add-data "%PROJECT_ROOT%\SubtitleTranslate - ChatGPT - Without Context.as;." --add-data "%PROJECT_ROOT%\SubtitleTranslate - ChatGPT - Without Context.ico;." --add-data "%BUILD_DIR%\language_strings.json;." --add-data "%BUILD_DIR%\model_token_limits.json;." --add-data "%PROJECT_ROOT%\LICENSE;." "%PREPARED_INSTALLER_SCRIPT%"
 
 REM --- Step 3: Cleanup ---
 echo "Cleaning up temporary files..."
-rmdir /s /q build
+rmdir /s /q "%BUILD_DIR%\build"
 del /f /q installer.spec
 del /f /q "%PREPARED_INSTALLER_SCRIPT%"
 
