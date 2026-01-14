@@ -10,8 +10,9 @@ string GetTitle() {
          + "{$CP0=ChatGPT Translate$}";
 }
 
+// The version number will be replaced during the installation process
 string GetVersion() {
-    return "1.7.2";
+    return "1.7.5";
 }
 
 string GetDesc() {
@@ -293,12 +294,22 @@ bool EqualsIgnoreCase(const string &in a, const string &in b) {
     return true;
 }
 
+string BuildAuthHeaders(const string &in key) {
+    string trimmedKey = key.Trim();
+    string lowerKey = trimmedKey.MakeLower();
+    string headers = "Content-Type: application/json";
+    if (trimmedKey != "" && lowerKey != "nullkey")
+        headers = "Authorization: Bearer " + trimmedKey + "\n" + headers;
+    return headers;
+}
+
 // API Key and API Base verification process
 string ServerLogin(string User, string Pass) {
     RefreshConfiguration();
     string errorAccum = "";
     User = User.Trim();
     Pass = Pass.Trim();
+    string lowerPass = Pass.MakeLower();
     array<string> tokens;
     int start = 0;
     for (int i = 0; i <= int(User.length()); i++) {
@@ -310,7 +321,7 @@ string ServerLogin(string User, string Pass) {
     }
     string userModel = "";
     string customApiUrl = "";
-    bool allowNullApiKey = (Pass == "");
+    bool allowNullApiKey = (Pass == "" || lowerPass == "nullkey");
     string delayToken = "";
     string retryToken = "";
     string cacheToken = "";
@@ -360,8 +371,9 @@ string ServerLogin(string User, string Pass) {
         errorAccum += "API Key not configured. Please enter a valid API Key.\n";
         return errorAccum;
     }
+    string storedApiKey = (lowerPass == "nullkey" || (allowNullApiKey && Pass == "")) ? "nullkey" : Pass;
     bool isOfficial = (apiUrlLocal.find("api.openai.com") != -1);
-    string verifyHeaders = "Authorization: Bearer " + Pass + "\nContent-Type: application/json";
+    string verifyHeaders = BuildAuthHeaders(Pass);
     string testSystemMsg = "You are a test assistant.";
     string testUserMsg = "Hello";
     string escapedTestSystemMsg = JsonEscape(testSystemMsg);
@@ -376,7 +388,7 @@ string ServerLogin(string User, string Pass) {
             if (testReader.parse(testResponse, testRoot)) {
                 if (testRoot.isObject() && testRoot["choices"].isArray() && testRoot["choices"].size() > 0) {
                     GPT_selected_model = userModel;
-                    GPT_api_key = Pass;
+                    GPT_api_key = storedApiKey;
                     HostSaveString("gpt_api_key", GPT_api_key);
                     HostSaveString("gpt_selected_model", GPT_selected_model);
                     HostSaveString("gpt_apiUrl", apiUrlLocal);
@@ -409,7 +421,7 @@ string ServerLogin(string User, string Pass) {
                 if (correctedRoot.isObject() && correctedRoot["choices"].isArray() && correctedRoot["choices"].size() > 0) {
                     apiUrlLocal = correctedApiUrl;
                     GPT_selected_model = userModel;
-                    GPT_api_key = Pass;
+                    GPT_api_key = storedApiKey;
                     HostSaveString("gpt_api_key", GPT_api_key);
                     HostSaveString("gpt_selected_model", GPT_selected_model);
                     HostSaveString("gpt_apiUrl", apiUrlLocal);
@@ -678,7 +690,7 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
                          "\"messages\":[{\"role\":\"system\",\"content\":\"" + escapedSystemMsg + "\"}," 
                          "{\"role\":\"user\",\"content\":\"" + escapedUserMsg + "\"}]}";
 
-    string headers = "Authorization: Bearer " + GPT_api_key + "\nContent-Type: application/json";
+    string headers = BuildAuthHeaders(GPT_api_key);
     int delayInt = ParseInt(GPT_delay_ms);
     int retryModeInt = ParseInt(GPT_retry_mode);
 

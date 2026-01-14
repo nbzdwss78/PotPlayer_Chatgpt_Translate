@@ -11,8 +11,9 @@ string GetTitle() {
          + "{$CP0=ChatGPT Translate (No Context) $}";
 }
 
+// The version number will be replaced during the installation process
 string GetVersion() {
-    return "1.7.2-wc";
+    return "1.7.5-wc";
 }
 
 string GetDesc() {
@@ -259,11 +260,21 @@ int ParseInt(const string &in s) {
     return v;
 }
 
+string BuildAuthHeaders(const string &in key) {
+    string trimmedKey = key.Trim();
+    string lowerKey = trimmedKey.MakeLower();
+    string headers = "Content-Type: application/json";
+    if (trimmedKey != "" && lowerKey != "nullkey")
+        headers = "Authorization: Bearer " + trimmedKey + "\n" + headers;
+    return headers;
+}
+
 // API Key and API Base verification process
 string ServerLogin(string User, string Pass) {
     string errorAccum = "";
     User = User.Trim();
     Pass = Pass.Trim();
+    string lowerPass = Pass.MakeLower();
     array<string> tokens;
     int start = 0;
     for (int i = 0; i <= int(User.length()); i++) {
@@ -275,7 +286,7 @@ string ServerLogin(string User, string Pass) {
     }
     string userModel = "";
     string customApiUrl = "";
-    bool allowNullApiKey = (Pass == "");
+    bool allowNullApiKey = (Pass == "" || lowerPass == "nullkey");
     string delayToken = "";
     string retryToken = "";
     if (tokens.length() >= 1) {
@@ -283,9 +294,10 @@ string ServerLogin(string User, string Pass) {
     }
     for (int i = 1; i < int(tokens.length()); i++) {
         string t = tokens[i];
-        if (t == "nullkey")
+        string lowered = t.MakeLower();
+        if (lowered == "nullkey")
             allowNullApiKey = true;
-        else if (t.substr(0,5) == "retry" && IsDigits(t.substr(5)))
+        else if (lowered.length() >= 5 && lowered.substr(0,5) == "retry" && IsDigits(t.substr(5)))
             retryToken = t.substr(5);
         else if (IsDigits(t))
             delayToken = t;
@@ -312,8 +324,9 @@ string ServerLogin(string User, string Pass) {
         errorAccum += "API Key not configured. Please enter a valid API Key.\n";
         return errorAccum;
     }
+    string storedApiKey = (lowerPass == "nullkey" || (allowNullApiKey && Pass == "")) ? "nullkey" : Pass;
     bool isOfficial = (apiUrlLocal.find("api.openai.com") != -1);
-    string verifyHeaders = "Authorization: Bearer " + Pass + "\nContent-Type: application/json";
+    string verifyHeaders = BuildAuthHeaders(Pass);
     string testSystemMsg = "You are a test assistant.";
     string testUserMsg = "Hello";
     string escapedTestSystemMsg = JsonEscape(testSystemMsg);
@@ -328,7 +341,7 @@ string ServerLogin(string User, string Pass) {
         if (testReader.parse(testResponse, testRoot)) {
             if (testRoot.isObject() && testRoot["choices"].isArray() && testRoot["choices"].size() > 0) {
                 GPT_selected_model = userModel;
-                GPT_api_key = Pass;
+                GPT_api_key = storedApiKey;
                 HostSaveString("wc_api_key", GPT_api_key);
                 HostSaveString("wc_selected_model", GPT_selected_model);
                 HostSaveString("wc_apiUrl", apiUrlLocal);
@@ -357,7 +370,7 @@ string ServerLogin(string User, string Pass) {
                 if (correctedRoot.isObject() && correctedRoot["choices"].isArray() && correctedRoot["choices"].size() > 0) {
                     apiUrlLocal = correctedApiUrl;
                     GPT_selected_model = userModel;
-                    GPT_api_key = Pass;
+                    GPT_api_key = storedApiKey;
                     HostSaveString("wc_api_key", GPT_api_key);
                     HostSaveString("wc_selected_model", GPT_selected_model);
                     HostSaveString("wc_apiUrl", apiUrlLocal);
@@ -562,7 +575,7 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
                          "\"messages\":[{\"role\":\"system\",\"content\":\"" + escapedSystemMsg + "\"}," 
                          "{\"role\":\"user\",\"content\":\"" + escapedUserMsg + "\"}]}";
 
-    string headers = "Authorization: Bearer " + GPT_api_key + "\nContent-Type: application/json";
+    string headers = BuildAuthHeaders(GPT_api_key);
     int delayInt = ParseInt(GPT_delay_ms);
     int retryModeInt = ParseInt(GPT_retry_mode);
     string response = "";

@@ -88,6 +88,11 @@ API_PROVIDERS = {
         "purchase_page": "pass",
         "allow_custom_model": True
     },
+    "gemini-flash": {
+        "model": "gemini-3-flash-preview",
+        "api_base": "https://generativelanguage.googleapis.com/v1beta/openai/",
+        "purchase_page": "https://aistudio.google.com/app/apikey"
+    },
     # Sentinel for custom entry (user-defined)
     "__CUSTOM__": {
         "model": "",
