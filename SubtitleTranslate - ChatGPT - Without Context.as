@@ -262,7 +262,7 @@ int ParseInt(const string &in s) {
 
 string BuildAuthHeaders(const string &in key) {
     string trimmedKey = key.Trim();
-    string lowerKey = trimmedKey.MakeLower();
+    string lowerKey = string(trimmedKey).MakeLower();
     string headers = "Content-Type: application/json";
     if (trimmedKey != "" && lowerKey != "nullkey")
         headers = "Authorization: Bearer " + trimmedKey + "\n" + headers;
@@ -274,7 +274,7 @@ string ServerLogin(string User, string Pass) {
     string errorAccum = "";
     User = User.Trim();
     Pass = Pass.Trim();
-    string lowerPass = Pass.MakeLower();
+    string lowerPass = string(Pass).MakeLower();
     array<string> tokens;
     int start = 0;
     for (int i = 0; i <= int(User.length()); i++) {
