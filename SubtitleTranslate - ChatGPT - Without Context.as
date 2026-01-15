@@ -684,6 +684,8 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
                     }
                 }
             }
+            isFailureTranslation = translatedText.length() >= GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX.length() &&
+                                   translatedText.substr(0, GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX.length()) == GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX;
         }
 
         if (!isFailureTranslation && GPT_selected_model.find("gemini") != -1) {
