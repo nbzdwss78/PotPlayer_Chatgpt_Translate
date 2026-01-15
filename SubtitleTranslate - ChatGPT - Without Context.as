@@ -30,19 +30,23 @@ string GetLoginTitle() {
 string GetLoginDesc() {
     return "{$CP949=모델 이름, API 주소, 선택적 nullkey, 지연(ms) 및 재시도 모드(0-3)를 입력하십시오 (예: gpt-5-mini|https://api.openai.com/v1/chat/completions|nullkey|500|retry1).$}"
          + "{$CP949=\n\n설치 프로그램에서 미리 구성한 값이 있다면 PotPlayer 패널에서 다시 설정하기 전까지 해당 값을 사용하며, 패널에서 설정하면 해당 설정이 항상 우선 적용됩니다.$}"
+         + "{$CP949=\n\n선택적으로 cRetry 를 추가하면 번역이 원문보다 과도하게 길 때 자동으로 재시도합니다.$}"
          + "{$CP950=請輸入模型名稱、API 地址、可選的 nullkey、延遲毫秒與重試模式(0-3)（例如: gpt-5-mini|https://api.openai.com/v1/chat/completions|nullkey|500|retry1）。$}"
          + "{$CP950=\n\n如果安裝包已寫入預設配置，在 PotPlayer 面板中未重新設定之前會沿用這些配置；一旦在面板中調整，將始終以面板設定為準。$}"
+         + "{$CP950=\n\n可選加上 cRetry，在翻譯結果過長時自動重試。$}"
          + "{$CP936=请输入模型名称、API 地址、可选的 nullkey、延迟毫秒和重试模式(0-3)（例如: gpt-5-mini|https://api.openai.com/v1/chat/completions|nullkey|500|retry1）。$}"
          + "{$CP936=\n\n如果安装包已经写入默认配置，在 PotPlayer 面板中没有重新设置之前会继续使用这些配置；一旦在面板中修改，将始终以面板设置为准。$}"
+         + "{$CP936=\n\n可选追加 cRetry，当翻译结果明显过长时自动重试。$}"
          + "{$CP0=Please enter the model name, API URL, optional 'nullkey', optional delay in ms, and retry mode 0-3 (e.g., gpt-5-mini|https://api.openai.com/v1/chat/completions|nullkey|500|retry1).$}"
-         + "{$CP0=\n\nInstaller defaults will remain in effect until you update the settings in PotPlayer's panel, and any panel changes will always take priority.$}";
+         + "{$CP0=\n\nInstaller defaults will remain in effect until you update the settings in PotPlayer's panel, and any panel changes will always take priority.$}"
+         + "{$CP0=\n\nOptionally append cRetry to retry when translations are far longer than the source line.$}";
 }
 
 string GetUserText() {
-    return "{$CP949=모델 이름|API 주소|nullkey|지연(ms)|재시도 모드 (현재: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + ")$}"
-         + "{$CP950=模型名稱|API 地址|nullkey|延遲ms|重試模式 (目前: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + ")$}"
-         + "{$CP936=模型名称|API 地址|nullkey|延迟ms|重试模式 (目前: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + ")$}"
-         + "{$CP0=Model Name|API URL|nullkey|Delay ms|Retry mode (Current: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + ")$}";
+    return "{$CP949=모델 이름|API 주소|nullkey|지연(ms)|재시도 모드 (현재: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | cRetry=" + (IsContextRetryEnabled() ? "on" : "off") + ")$}"
+         + "{$CP950=模型名稱|API 地址|nullkey|延遲ms|重試模式 (目前: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | cRetry=" + (IsContextRetryEnabled() ? "on" : "off") + ")$}"
+         + "{$CP936=模型名称|API 地址|nullkey|延迟ms|重试模式 (目前: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | cRetry=" + (IsContextRetryEnabled() ? "on" : "off") + ")$}"
+         + "{$CP0=Model Name|API URL|nullkey|Delay ms|Retry mode (Current: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | cRetry=" + (IsContextRetryEnabled() ? "on" : "off") + ")$}";
 }
 
 string GetPasswordText() {
@@ -62,6 +66,7 @@ string GPT_pre_selected_model = "gpt-5-mini"; // will be replaced during install
 string GPT_pre_apiUrl = "https://api.openai.com/v1/chat/completions"; // will be replaced during installation
 string GPT_pre_delay_ms = "0"; // will be replaced during installation
 string GPT_pre_retry_mode = "0"; // will be replaced during installation
+string GPT_pre_context_retry = "0"; // will be replaced during installation
 string GPT_pre_model_token_limits_json = "{}"; // serialized token limit rules (injected by installer)
 
 string GPT_api_key = GPT_pre_api_key;
@@ -69,6 +74,7 @@ string GPT_selected_model = GPT_pre_selected_model; // Default model
 string GPT_apiUrl = GPT_pre_apiUrl; // Default API URL
 string GPT_delay_ms = GPT_pre_delay_ms; // Request delay in ms
 string GPT_retry_mode = GPT_pre_retry_mode; // Auto retry mode
+string GPT_context_retry = GPT_pre_context_retry; // Retry when translation seems too long
 string GPT_UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
 bool GPT_token_rules_initialized = false;
 int GPT_default_model_token_limit = 4096;
@@ -107,6 +113,7 @@ void EnsureInstallerDefaultsPersisted() {
     EnsureConfigDefault("wc_apiUrl", GPT_pre_apiUrl);
     EnsureConfigDefault("wc_delay_ms", GPT_pre_delay_ms);
     EnsureConfigDefault("wc_retry_mode", GPT_pre_retry_mode);
+    EnsureConfigDefault("wc_context_retry", GPT_pre_context_retry);
 }
 
 void RefreshConfiguration() {
@@ -116,6 +123,7 @@ void RefreshConfiguration() {
     GPT_apiUrl = LoadInstallerConfig("wc_apiUrl", GPT_pre_apiUrl, "gpt_apiUrl");
     GPT_delay_ms = LoadInstallerConfig("wc_delay_ms", GPT_pre_delay_ms, "gpt_delay_ms");
     GPT_retry_mode = LoadInstallerConfig("wc_retry_mode", GPT_pre_retry_mode, "gpt_retry_mode");
+    GPT_context_retry = NormalizeRetryFlag(LoadInstallerConfig("wc_context_retry", GPT_pre_context_retry, "gpt_context_retry"));
 }
 
 // Supported Language List
@@ -269,6 +277,44 @@ string BuildAuthHeaders(const string &in key) {
     return headers;
 }
 
+string NormalizeRetryFlag(const string &in value) {
+    string trimmed = value.Trim();
+    if (trimmed == "")
+        return "0";
+    string lower = trimmed.MakeLower();
+    if (lower == "1" || lower == "true" || lower == "on" || lower == "yes" || lower == "enable" || lower == "enabled")
+        return "1";
+    return "0";
+}
+
+bool IsContextRetryEnabled() {
+    return NormalizeRetryFlag(GPT_context_retry) == "1";
+}
+
+bool IsOverlongTranslation(const string &in translation, const string &in sourceText) {
+    string trimmedSource = sourceText.Trim();
+    int sourceLength = int(trimmedSource.length());
+    if (sourceLength <= 0)
+        return false;
+    return int(translation.length()) > sourceLength * 5;
+}
+
+string ExecuteWithRetry(const string &in url, const string &in headers, const string &in payload, int delayInt, int retryModeInt) {
+    string response = "";
+    int attempts = 0;
+    while (true) {
+        if (attempts == 0 || (retryModeInt == 3 && attempts > 0)) {
+            if (delayInt > 0)
+                HostSleep(delayInt);
+        }
+        response = HostUrlGetString(url, GPT_UserAgent, headers, payload);
+        if (response != "" || retryModeInt == 0 || (retryModeInt == 1 && attempts >= 1))
+            break;
+        attempts++;
+    }
+    return response;
+}
+
 // API Key and API Base verification process
 string ServerLogin(string User, string Pass) {
     string errorAccum = "";
@@ -289,6 +335,7 @@ string ServerLogin(string User, string Pass) {
     bool allowNullApiKey = (Pass == "" || lowerPass == "nullkey");
     string delayToken = "";
     string retryToken = "";
+    string cRetryToken = "";
     if (tokens.length() >= 1) {
         userModel = tokens[0];
     }
@@ -299,6 +346,12 @@ string ServerLogin(string User, string Pass) {
             allowNullApiKey = true;
         else if (lowered.length() >= 5 && lowered.substr(0,5) == "retry" && IsDigits(t.substr(5)))
             retryToken = t.substr(5);
+        else if (lowered == "cretry")
+            cRetryToken = "1";
+        else if (lowered == "nocretry")
+            cRetryToken = "0";
+        else if (lowered.length() >= 7 && lowered.substr(0,7) == "cretry=")
+            cRetryToken = lowered.substr(7);
         else if (IsDigits(t))
             delayToken = t;
         else if (customApiUrl == "")
@@ -308,6 +361,8 @@ string ServerLogin(string User, string Pass) {
         GPT_retry_mode = retryToken;
     if (delayToken != "")
         GPT_delay_ms = delayToken;
+    if (cRetryToken != "")
+        GPT_context_retry = NormalizeRetryFlag(cRetryToken);
     if (userModel == "") {
         errorAccum += "Model name not entered. Please enter a valid model name.\n";
         return errorAccum;
@@ -347,6 +402,7 @@ string ServerLogin(string User, string Pass) {
                 HostSaveString("wc_apiUrl", apiUrlLocal);
                 HostSaveString("wc_delay_ms", GPT_delay_ms);
                 HostSaveString("wc_retry_mode", GPT_retry_mode);
+                HostSaveString("wc_context_retry", GPT_context_retry);
                 return "200 ok";
             } else {
                 if (testRoot.isObject() && testRoot["error"].isObject() && testRoot["error"]["message"].isString())
@@ -375,7 +431,8 @@ string ServerLogin(string User, string Pass) {
                     HostSaveString("wc_selected_model", GPT_selected_model);
                     HostSaveString("wc_apiUrl", apiUrlLocal);
                     HostSaveString("wc_delay_ms", GPT_delay_ms);
-                HostSaveString("wc_retry_mode", GPT_retry_mode);
+                    HostSaveString("wc_retry_mode", GPT_retry_mode);
+                    HostSaveString("wc_context_retry", GPT_context_retry);
                     return "Warning: Your API base was auto-corrected to: " + apiUrlLocal + "\n200 ok";
                 } else {
                     if (correctedRoot.isObject() && correctedRoot["error"].isObject() && correctedRoot["error"]["message"].isString())
@@ -443,11 +500,13 @@ void ServerLogout() {
     GPT_apiUrl = GPT_pre_apiUrl;
     GPT_delay_ms = GPT_pre_delay_ms;
     GPT_retry_mode = GPT_pre_retry_mode;
+    GPT_context_retry = GPT_pre_context_retry;
     HostSaveString("wc_api_key", "");
     HostSaveString("wc_selected_model", GPT_selected_model);
     HostSaveString("wc_apiUrl", GPT_apiUrl);
     HostSaveString("wc_delay_ms", GPT_delay_ms);
-                HostSaveString("wc_retry_mode", GPT_retry_mode);
+    HostSaveString("wc_retry_mode", GPT_retry_mode);
+    HostSaveString("wc_context_retry", GPT_context_retry);
     HostPrintUTF8("Successfully logged out.\n");
 }
 
@@ -578,18 +637,7 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
     string headers = BuildAuthHeaders(GPT_api_key);
     int delayInt = ParseInt(GPT_delay_ms);
     int retryModeInt = ParseInt(GPT_retry_mode);
-    string response = "";
-    int attempts = 0;
-    while (true) {
-        if (attempts == 0 || (retryModeInt == 3 && attempts > 0)) {
-            if (delayInt > 0)
-                HostSleep(delayInt);
-        }
-        response = HostUrlGetString(GPT_apiUrl, GPT_UserAgent, headers, requestData);
-        if (response != "" || retryModeInt == 0 || (retryModeInt == 1 && attempts >= 1))
-            break;
-        attempts++;
-    }
+    string response = ExecuteWithRetry(GPT_apiUrl, headers, requestData, delayInt, retryModeInt);
     if (response == "") {
         string failureMessage = "Translation request failed. Please check network connection or API Key.";
         HostPrintUTF8(failureMessage + "\n");
@@ -611,6 +659,31 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
         string translatedText = choices[0]["message"]["content"].asString();
         bool isFailureTranslation = translatedText.length() >= GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX.length() &&
                                     translatedText.substr(0, GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX.length()) == GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX;
+
+        if (!isFailureTranslation && IsContextRetryEnabled() && IsOverlongTranslation(translatedText, Text)) {
+            HostPrintUTF8("Translation output seems too long compared to the source. Retrying once.\n");
+            string retryResponse = ExecuteWithRetry(GPT_apiUrl, headers, requestData, delayInt, retryModeInt);
+            if (retryResponse != "") {
+                JsonReader retryReader;
+                JsonValue retryRoot;
+                if (retryReader.parse(retryResponse, retryRoot)) {
+                    JsonValue retryChoices = retryRoot["choices"];
+                    if (retryChoices.isArray() && retryChoices.size() > 0 &&
+                        retryChoices[0].isObject() &&
+                        retryChoices[0]["message"].isObject() &&
+                        retryChoices[0]["message"]["content"].isString()) {
+                        string retryTranslation = retryChoices[0]["message"]["content"].asString();
+                        bool retryOverlong = IsOverlongTranslation(retryTranslation, Text);
+                        if (!retryOverlong || retryTranslation.length() < translatedText.length())
+                            translatedText = retryTranslation;
+                    }
+                }
+            }
+        }
+        if (!isFailureTranslation) {
+            isFailureTranslation = translatedText.length() >= GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX.length() &&
+                                   translatedText.substr(0, GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX.length()) == GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX;
+        }
 
         if (!isFailureTranslation && GPT_selected_model.find("gemini") != -1) {
             while (translatedText.length() > 0 && translatedText.substr(translatedText.length() - 1, 1) == "\n") {

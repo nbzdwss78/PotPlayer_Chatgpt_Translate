@@ -30,22 +30,26 @@ string GetLoginDesc() {
     return "{$CP949=모델 이름, API 주소, 선택적 nullkey, 지연(ms) 및 재시도 모드(0-3)를 입력하십시오 (예: gpt-5-nano|https://api.openai.com/v1/chat/completions|nullkey|500|retry1).$}"
          + "{$CP949=\n\n설치 프로그램에서 미리 구성한 값이 있다면 PotPlayer 패널에서 다시 설정하기 전까지 해당 값을 사용하며, 패널에서 설정하면 해당 설정이 항상 우선 적용됩니다.$}"
          + "{$CP949=\n\n선택적으로 cache=auto 또는 cache=off 를 추가하여 문맥 캐시 모드를 제어할 수 있으며, auto 는 지원되지 않을 경우 chat 방식으로 자동 전환됩니다.$}"
+         + "{$CP949=\n\n선택적으로 cRetry 를 추가하면 번역이 원문보다 과도하게 길 때 자동으로 재시도합니다.$}"
          + "{$CP950=請輸入模型名稱、API 地址、可選的 nullkey、延遲毫秒與重試模式(0-3)（例如: gpt-5-nano|https://api.openai.com/v1/chat/completions|nullkey|500|retry1）。$}"
          + "{$CP950=\n\n如果安裝包已寫入預設配置，在 PotPlayer 面板中未重新設定之前會沿用這些配置；一旦在面板中調整，將始終以面板設定為準。$}"
          + "{$CP950=\n\n可選加上 cache=auto 或 cache=off 以控制上下文快取模式，auto 會在不支援時自動回退至 chat。$}"
+         + "{$CP950=\n\n可選加上 cRetry，在翻譯結果過長時自動重試。$}"
          + "{$CP936=请输入模型名称、API 地址、可选的 nullkey、延迟毫秒和重试模式(0-3)（例如: gpt-5-nano|https://api.openai.com/v1/chat/completions|nullkey|500|retry1）。$}"
          + "{$CP936=\n\n如果安装包已经写入默认配置，在 PotPlayer 面板中没有重新设置之前会继续使用这些配置；一旦在面板中修改，将始终以面板设置为准。$}"
          + "{$CP936=\n\n可选追加 cache=auto 或 cache=off 用于控制上下文缓存模式，auto 在不支持时会自动回退到 chat。$}"
+         + "{$CP936=\n\n可选追加 cRetry，当翻译结果明显过长时自动重试。$}"
          + "{$CP0=Please enter the model name, API URL, optional 'nullkey', optional delay in ms, and retry mode 0-3 (e.g., gpt-5-nano|https://api.openai.com/v1/chat/completions|nullkey|500|retry1).$}"
          + "{$CP0=\n\nInstaller defaults will remain in effect until you update the settings in PotPlayer's panel, and any panel changes will always take priority.$}"
-         + "{$CP0=\n\nOptionally append cache=auto or cache=off to control context caching. Auto falls back to chat when caching is unsupported.$}";
+         + "{$CP0=\n\nOptionally append cache=auto or cache=off to control context caching. Auto falls back to chat when caching is unsupported.$}"
+         + "{$CP0=\n\nOptionally append cRetry to retry when translations are far longer than the source line.$}";
 }
 
 string GetUserText() {
-    return "{$CP949=모델 이름|API 주소|nullkey|지연(ms)|재시도 모드|캐시 모드 (현재: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | " + GPT_context_cache_mode + ")$}"
-         + "{$CP950=模型名稱|API 地址|nullkey|延遲ms|重試模式|快取模式 (目前: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | " + GPT_context_cache_mode + ")$}"
-         + "{$CP936=模型名称|API 地址|nullkey|延迟ms|重试模式|缓存模式 (目前: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | " + GPT_context_cache_mode + ")$}"
-         + "{$CP0=Model Name|API URL|nullkey|Delay ms|Retry mode|Cache mode (Current: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | " + GPT_context_cache_mode + ")$}";
+    return "{$CP949=모델 이름|API 주소|nullkey|지연(ms)|재시도 모드|캐시 모드 (현재: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | " + GPT_context_cache_mode + " | cRetry=" + (IsContextRetryEnabled() ? "on" : "off") + ")$}"
+         + "{$CP950=模型名稱|API 地址|nullkey|延遲ms|重試模式|快取模式 (目前: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | " + GPT_context_cache_mode + " | cRetry=" + (IsContextRetryEnabled() ? "on" : "off") + ")$}"
+         + "{$CP936=模型名称|API 地址|nullkey|延迟ms|重试模式|缓存模式 (目前: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | " + GPT_context_cache_mode + " | cRetry=" + (IsContextRetryEnabled() ? "on" : "off") + ")$}"
+         + "{$CP0=Model Name|API URL|nullkey|Delay ms|Retry mode|Cache mode (Current: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | " + GPT_context_cache_mode + " | cRetry=" + (IsContextRetryEnabled() ? "on" : "off") + ")$}";
 }
 
 string GetPasswordText() {
@@ -62,6 +66,7 @@ string GPT_pre_selected_model = "gpt-5-nano"; // will be replaced during install
 string GPT_pre_apiUrl = "https://api.openai.com/v1/chat/completions"; // will be replaced during installation
 string GPT_pre_delay_ms = "0"; // will be replaced during installation
 string GPT_pre_retry_mode = "0"; // will be replaced during installation
+string GPT_pre_context_retry = "0"; // will be replaced during installation
 string GPT_pre_context_token_budget = "6000"; // approx. tokens reserved for context (0 = auto)
 string GPT_pre_context_truncation_mode = "drop_oldest"; // drop_oldest | smart_trim
 string GPT_pre_context_cache_mode = "auto"; // auto | off
@@ -75,6 +80,7 @@ string GPT_selected_model = GPT_pre_selected_model; // Default model
 string GPT_apiUrl = GPT_pre_apiUrl; // Default API URL
 string GPT_delay_ms = GPT_pre_delay_ms; // Request delay in ms
 string GPT_retry_mode = GPT_pre_retry_mode; // Auto retry mode
+string GPT_context_retry = GPT_pre_context_retry; // Retry when translation seems too long
 string GPT_context_token_budget = GPT_pre_context_token_budget; // Approximate token budget for context
 string GPT_context_truncation_mode = GPT_pre_context_truncation_mode; // Truncation mode when context exceeds budget
 string GPT_context_cache_mode = GPT_pre_context_cache_mode; // auto | off
@@ -119,6 +125,7 @@ void EnsureInstallerDefaultsPersisted() {
     EnsureConfigDefault("gpt_apiUrl", GPT_pre_apiUrl);
     EnsureConfigDefault("gpt_delay_ms", GPT_pre_delay_ms);
     EnsureConfigDefault("gpt_retry_mode", GPT_pre_retry_mode);
+    EnsureConfigDefault("gpt_context_retry", GPT_pre_context_retry);
     EnsureConfigDefault("gpt_context_token_budget", GPT_pre_context_token_budget);
     EnsureConfigDefault("gpt_context_truncation_mode", GPT_pre_context_truncation_mode);
     EnsureConfigDefault("gpt_context_cache_mode", GPT_pre_context_cache_mode);
@@ -131,6 +138,7 @@ void RefreshConfiguration() {
     GPT_apiUrl = LoadInstallerConfig("gpt_apiUrl", GPT_pre_apiUrl, "wc_apiUrl");
     GPT_delay_ms = LoadInstallerConfig("gpt_delay_ms", GPT_pre_delay_ms, "wc_delay_ms");
     GPT_retry_mode = LoadInstallerConfig("gpt_retry_mode", GPT_pre_retry_mode, "wc_retry_mode");
+    GPT_context_retry = NormalizeRetryFlag(LoadInstallerConfig("gpt_context_retry", GPT_pre_context_retry));
     GPT_context_token_budget = LoadInstallerConfig("gpt_context_token_budget", GPT_pre_context_token_budget);
     GPT_context_truncation_mode = LoadInstallerConfig("gpt_context_truncation_mode", GPT_pre_context_truncation_mode);
     GPT_context_cache_mode = NormalizeCacheMode(LoadInstallerConfig("gpt_context_cache_mode", GPT_pre_context_cache_mode));
@@ -325,6 +333,7 @@ string ServerLogin(string User, string Pass) {
     string delayToken = "";
     string retryToken = "";
     string cacheToken = "";
+    string cRetryToken = "";
     string normalizedCacheMode = GPT_context_cache_mode;
     if (tokens.length() >= 1) {
         userModel = tokens[0];
@@ -336,6 +345,12 @@ string ServerLogin(string User, string Pass) {
             allowNullApiKey = true;
         else if (lowered.length() >= 5 && lowered.substr(0,5) == "retry" && IsDigits(t.substr(5)))
             retryToken = t.substr(5);
+        else if (lowered == "cretry")
+            cRetryToken = "1";
+        else if (lowered == "nocretry")
+            cRetryToken = "0";
+        else if (lowered.length() >= 7 && lowered.substr(0,7) == "cretry=")
+            cRetryToken = lowered.substr(7);
         else if (IsDigits(t))
             delayToken = t;
         else if (lowered.length() >= 6 && lowered.substr(0,6) == "cache=")
@@ -351,6 +366,8 @@ string ServerLogin(string User, string Pass) {
         GPT_retry_mode = retryToken;
     if (delayToken != "")
         GPT_delay_ms = delayToken;
+    if (cRetryToken != "")
+        GPT_context_retry = NormalizeRetryFlag(cRetryToken);
     if (cacheToken != "")
         normalizedCacheMode = NormalizeCacheMode(cacheToken);
     else
@@ -394,6 +411,7 @@ string ServerLogin(string User, string Pass) {
                     HostSaveString("gpt_apiUrl", apiUrlLocal);
                     HostSaveString("gpt_delay_ms", GPT_delay_ms);
                     HostSaveString("gpt_retry_mode", GPT_retry_mode);
+                    HostSaveString("gpt_context_retry", GPT_context_retry);
                     GPT_context_cache_mode = normalizedCacheMode;
                     HostSaveString("gpt_context_cache_mode", GPT_context_cache_mode);
                     GPT_context_cache_disabled_for_session = false;
@@ -427,6 +445,7 @@ string ServerLogin(string User, string Pass) {
                     HostSaveString("gpt_apiUrl", apiUrlLocal);
                     HostSaveString("gpt_delay_ms", GPT_delay_ms);
                     HostSaveString("gpt_retry_mode", GPT_retry_mode);
+                    HostSaveString("gpt_context_retry", GPT_context_retry);
                     GPT_context_cache_mode = normalizedCacheMode;
                     HostSaveString("gpt_context_cache_mode", GPT_context_cache_mode);
                     GPT_context_cache_disabled_for_session = false;
@@ -498,6 +517,7 @@ void ServerLogout() {
     GPT_apiUrl = GPT_pre_apiUrl;
     GPT_delay_ms = GPT_pre_delay_ms;
     GPT_retry_mode = GPT_pre_retry_mode;
+    GPT_context_retry = GPT_pre_context_retry;
     GPT_context_token_budget = GPT_pre_context_token_budget;
     GPT_context_truncation_mode = GPT_pre_context_truncation_mode;
     GPT_context_cache_mode = GPT_pre_context_cache_mode;
@@ -508,6 +528,7 @@ void ServerLogout() {
     HostSaveString("gpt_apiUrl", GPT_apiUrl);
     HostSaveString("gpt_delay_ms", GPT_delay_ms);
     HostSaveString("gpt_retry_mode", GPT_retry_mode);
+    HostSaveString("gpt_context_retry", GPT_context_retry);
     HostSaveString("gpt_context_token_budget", GPT_context_token_budget);
     HostSaveString("gpt_context_truncation_mode", GPT_context_truncation_mode);
     HostSaveString("gpt_context_cache_mode", GPT_context_cache_mode);
@@ -753,6 +774,34 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
     bool isFailureTranslation = translation.length() >= GPT_CTX_TRANSLATION_FAILURE_WARNING_PREFIX.length() &&
                                 translation.substr(0, GPT_CTX_TRANSLATION_FAILURE_WARNING_PREFIX.length()) == GPT_CTX_TRANSLATION_FAILURE_WARNING_PREFIX;
 
+    if (!isFailureTranslation && IsContextRetryEnabled() && IsOverlongTranslation(translation, Text)) {
+        HostPrintUTF8("Translation output seems too long compared to the source. Retrying once.\n");
+        string retryResponse = ExecuteWithRetry(GPT_apiUrl, headers, requestData, delayInt, retryModeInt);
+        if (retryResponse != "") {
+            JsonReader retryReader;
+            JsonValue retryRoot;
+            if (retryReader.parse(retryResponse, retryRoot)) {
+                string retryTranslation = "";
+                JsonValue retryChoices = retryRoot["choices"];
+                if (retryChoices.isArray() && retryChoices.size() > 0 &&
+                    retryChoices[0].isObject() &&
+                    retryChoices[0]["message"].isObject() &&
+                    retryChoices[0]["message"]["content"].isString()) {
+                    retryTranslation = retryChoices[0]["message"]["content"].asString();
+                }
+                if (retryTranslation != "") {
+                    bool retryOverlong = IsOverlongTranslation(retryTranslation, Text);
+                    if (!retryOverlong || retryTranslation.length() < translation.length())
+                        translation = retryTranslation;
+                }
+            }
+        }
+    }
+    if (!isFailureTranslation) {
+        isFailureTranslation = translation.length() >= GPT_CTX_TRANSLATION_FAILURE_WARNING_PREFIX.length() &&
+                               translation.substr(0, GPT_CTX_TRANSLATION_FAILURE_WARNING_PREFIX.length()) == GPT_CTX_TRANSLATION_FAILURE_WARNING_PREFIX;
+    }
+
     if (!isFailureTranslation && GPT_selected_model.find("gemini") != -1) {
         while (translation.length() > 0 && translation.substr(translation.length() - 1, 1) == "\n") {
             translation = translation.substr(0, translation.length() - 1);
@@ -801,6 +850,28 @@ string NormalizeCacheMode(const string &in mode) {
     if (lower == "off" || lower == "disable" || lower == "disabled" || lower == "chat")
         return "off";
     return "auto";
+}
+
+string NormalizeRetryFlag(const string &in value) {
+    string trimmed = value.Trim();
+    if (trimmed == "")
+        return "0";
+    string lower = ToLower(trimmed);
+    if (lower == "1" || lower == "true" || lower == "on" || lower == "yes" || lower == "enable" || lower == "enabled")
+        return "1";
+    return "0";
+}
+
+bool IsContextRetryEnabled() {
+    return NormalizeRetryFlag(GPT_context_retry) == "1";
+}
+
+bool IsOverlongTranslation(const string &in translation, const string &in sourceText) {
+    string trimmedSource = sourceText.Trim();
+    int sourceLength = int(trimmedSource.length());
+    if (sourceLength <= 0)
+        return false;
+    return int(translation.length()) > sourceLength * 5;
 }
 
 void EnsureTokenRulesLoaded() {

@@ -313,7 +313,7 @@ def generate_uninstaller(uninstall_bat_path, files_to_delete, reg_key):
         f.write("\nexit\n")
 
 def apply_preconfig(file_path, api_key, model, api_base, delay_ms, retry_mode, debug_mode,
-                    context_budget=None, context_truncation=None, context_cache_mode=None,
+                    context_retry=None, context_budget=None, context_truncation=None, context_cache_mode=None,
                     token_limits_json=None):
     try:
         api_base = _normalize_api_url_for_config(api_base)
@@ -324,6 +324,9 @@ def apply_preconfig(file_path, api_key, model, api_base, delay_ms, retry_mode, d
         data = re.sub(r'pre_apiUrl\s*=\s*".*?"', f'pre_apiUrl = "{api_base}"', data)
         data = re.sub(r'pre_delay_ms\s*=\s*".*?"', f'pre_delay_ms = "{delay_ms}"', data)
         data = re.sub(r'pre_retry_mode\s*=\s*".*?"', f'pre_retry_mode = "{retry_mode}"', data)
+        if context_retry is not None:
+            retry_value = "1" if str(context_retry) in ("1", "true", "True", "on", "yes") else "0"
+            data = re.sub(r'pre_context_retry\s*=\s*".*?"', f'pre_context_retry = "{retry_value}"', data)
         if context_budget is not None:
             data = re.sub(r'pre_context_token_budget\s*=\s*".*?"', f'pre_context_token_budget = "{context_budget}"', data)
         if context_truncation is not None:
@@ -422,7 +425,7 @@ class InstallThread(QtCore.QThread):
         self._loop = None
         return ans
 
-    def __init__(self, install_dir, versions, script_dir, language, api_key, model, api_base, delay_ms, retry_mode, debug_mode, context_budget, context_truncation, context_cache_mode):
+    def __init__(self, install_dir, versions, script_dir, language, api_key, model, api_base, delay_ms, retry_mode, debug_mode, context_retry, context_budget, context_truncation, context_cache_mode):
         super().__init__()
         self.install_dir = install_dir
         self.versions = list(versions) if versions else []
@@ -434,6 +437,7 @@ class InstallThread(QtCore.QThread):
         self.delay_ms = delay_ms
         self.retry_mode = retry_mode
         self.debug_mode = debug_mode
+        self.context_retry = context_retry
         self.context_budget = context_budget
         self.context_truncation = context_truncation
         self.context_cache_mode = context_cache_mode
@@ -485,6 +489,7 @@ class InstallThread(QtCore.QThread):
                     shutil.copy(src_path, dest_path)
                     if dest_name.lower().endswith(".as"):
                         apply_preconfig(dest_path, self.api_key, self.model, self.api_base, self.delay_ms, self.retry_mode, self.debug_mode,
+                                        self.context_retry,
                                         str(self.context_budget) if variant == "with_context" else None,
                                         self.context_truncation if variant == "with_context" else None,
                                         self.context_cache_mode if variant == "with_context" else None,
@@ -516,6 +521,7 @@ class InstallThread(QtCore.QThread):
                         shutil.copy(src_path, new_dest_path)
                         if new_name.lower().endswith(".as"):
                             apply_preconfig(new_dest_path, self.api_key, self.model, self.api_base, self.delay_ms, self.retry_mode, self.debug_mode,
+                                            self.context_retry,
                                             str(self.context_budget) if variant == "with_context" else None,
                                             self.context_truncation if variant == "with_context" else None,
                                             self.context_cache_mode if variant == "with_context" else None,
@@ -530,6 +536,7 @@ class InstallThread(QtCore.QThread):
                 shutil.copy(src_path, dest_path)
                 if dest_name.lower().endswith(".as"):
                     apply_preconfig(dest_path, self.api_key, self.model, self.api_base, self.delay_ms, self.retry_mode, self.debug_mode,
+                                    self.context_retry,
                                     str(self.context_budget) if variant == "with_context" else None,
                                     self.context_truncation if variant == "with_context" else None,
                                     self.context_cache_mode if variant == "with_context" else None,
@@ -980,6 +987,30 @@ class RetryPage(QtWidgets.QWizardPage):
         self.wizard.retry_mode = self.combo.currentIndex()
         return True
 
+class ContextRetryPage(QtWidgets.QWizardPage):
+    def __init__(self, wizard):
+        super().__init__()
+        self.wizard = wizard
+        self.intro = QtWidgets.QLabel()
+        self.intro.setWordWrap(True)
+        self.checkbox = QtWidgets.QCheckBox()
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.intro)
+        layout.addWidget(self.checkbox)
+        self.setLayout(layout)
+
+    def initializePage(self):
+        s = self.wizard.strings
+        self.setTitle(s["cretry_title"])
+        self.intro.setText(s["cretry_intro"])
+        self.checkbox.setText(s["cretry_label"])
+        self.checkbox.setChecked(self.wizard.context_retry)
+        set_button_texts_for(self.wizard)
+
+    def validatePage(self):
+        self.wizard.context_retry = self.checkbox.isChecked()
+        return True
+
 class ContextPage(QtWidgets.QWizardPage):
     def __init__(self, wizard):
         super().__init__()
@@ -1119,6 +1150,7 @@ class ProgressPage(QtWidgets.QWizardPage):
             self.wizard.delay_ms,
             self.wizard.retry_mode,
             self.wizard.debug_mode,
+            self.wizard.context_retry,
             self.wizard.context_token_budget,
             self.wizard.context_truncation_mode,
             self.wizard.context_cache_mode,
@@ -1205,6 +1237,7 @@ class InstallerWizard(QtWidgets.QWizard):
         self.delay_ms = 0
         self.retry_mode = 0
         self.debug_mode = False
+        self.context_retry = False
         self.context_token_budget = 6000
         self.context_truncation_mode = "drop_oldest"
         self.context_cache_mode = "auto"
@@ -1221,6 +1254,7 @@ class InstallerWizard(QtWidgets.QWizard):
         self.addPage(ConfigPage(self))
         self.addPage(DelayPage(self))
         self.addPage(RetryPage(self))
+        self.addPage(ContextRetryPage(self))
         self.addPage(ContextPage(self))
         self.addPage(DebugPage(self))
         self.addPage(ProgressPage(self))
