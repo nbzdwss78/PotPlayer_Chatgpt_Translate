@@ -74,6 +74,7 @@ string GPT_pre_model_token_limits_json = "{}"; // serialized token limit rules (
 
 // Context-specific identifiers to prevent collisions with other subtitle translator scripts.
 const string GPT_CTX_TRANSLATION_FAILURE_WARNING_PREFIX = "[Translation failed - please share a screenshot with the developer] ";
+const int OVERLONG_TRANSLATION_MULTIPLIER = 5;
 
 string GPT_api_key = GPT_pre_api_key;
 string GPT_selected_model = GPT_pre_selected_model; // Default model
@@ -133,11 +134,11 @@ void EnsureInstallerDefaultsPersisted() {
 
 void RefreshConfiguration() {
     EnsureInstallerDefaultsPersisted();
-    GPT_api_key = LoadInstallerConfig("gpt_api_key", GPT_pre_api_key, "wc_api_key");
-    GPT_selected_model = LoadInstallerConfig("gpt_selected_model", GPT_pre_selected_model, "wc_selected_model");
-    GPT_apiUrl = LoadInstallerConfig("gpt_apiUrl", GPT_pre_apiUrl, "wc_apiUrl");
-    GPT_delay_ms = LoadInstallerConfig("gpt_delay_ms", GPT_pre_delay_ms, "wc_delay_ms");
-    GPT_retry_mode = LoadInstallerConfig("gpt_retry_mode", GPT_pre_retry_mode, "wc_retry_mode");
+    GPT_api_key = LoadInstallerConfig("gpt_api_key", GPT_pre_api_key);
+    GPT_selected_model = LoadInstallerConfig("gpt_selected_model", GPT_pre_selected_model);
+    GPT_apiUrl = LoadInstallerConfig("gpt_apiUrl", GPT_pre_apiUrl);
+    GPT_delay_ms = LoadInstallerConfig("gpt_delay_ms", GPT_pre_delay_ms);
+    GPT_retry_mode = LoadInstallerConfig("gpt_retry_mode", GPT_pre_retry_mode);
     GPT_context_retry = NormalizeRetryFlag(LoadInstallerConfig("gpt_context_retry", GPT_pre_context_retry));
     GPT_context_token_budget = LoadInstallerConfig("gpt_context_token_budget", GPT_pre_context_token_budget);
     GPT_context_truncation_mode = LoadInstallerConfig("gpt_context_truncation_mode", GPT_pre_context_truncation_mode);
@@ -753,12 +754,7 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
             return FormatFailureTranslation(response, "Failed to parse API response.");
         }
 
-        JsonValue choices = Root["choices"];
-        if (choices.isArray() && choices.size() > 0 &&
-            choices[0].isObject() &&
-            choices[0]["message"].isObject() &&
-            choices[0]["message"]["content"].isString()) {
-            translation = choices[0]["message"]["content"].asString();
+        if (TryExtractTranslation(Root, translation)) {
         } else if (Root.isObject() &&
                    Root["error"].isObject() &&
                    Root["error"]["message"].isString()) {
@@ -776,30 +772,19 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
 
     if (!isFailureTranslation && IsContextRetryEnabled() && IsOverlongTranslation(translation, Text)) {
         HostPrintUTF8("Translation output seems too long compared to the source. Retrying once.\n");
-        string retryResponse = ExecuteWithRetry(GPT_apiUrl, headers, requestData, delayInt, retryModeInt);
+        string retryResponse = ExecuteWithRetry(GPT_apiUrl, headers, requestData, delayInt, 0);
         if (retryResponse != "") {
             JsonReader retryReader;
             JsonValue retryRoot;
             if (retryReader.parse(retryResponse, retryRoot)) {
                 string retryTranslation = "";
-                JsonValue retryChoices = retryRoot["choices"];
-                if (retryChoices.isArray() && retryChoices.size() > 0 &&
-                    retryChoices[0].isObject() &&
-                    retryChoices[0]["message"].isObject() &&
-                    retryChoices[0]["message"]["content"].isString()) {
-                    retryTranslation = retryChoices[0]["message"]["content"].asString();
-                }
-                if (retryTranslation != "") {
+                if (TryExtractTranslation(retryRoot, retryTranslation)) {
                     bool retryOverlong = IsOverlongTranslation(retryTranslation, Text);
                     if (!retryOverlong || retryTranslation.length() < translation.length())
                         translation = retryTranslation;
                 }
             }
         }
-    }
-    if (!isFailureTranslation) {
-        isFailureTranslation = translation.length() >= GPT_CTX_TRANSLATION_FAILURE_WARNING_PREFIX.length() &&
-                               translation.substr(0, GPT_CTX_TRANSLATION_FAILURE_WARNING_PREFIX.length()) == GPT_CTX_TRANSLATION_FAILURE_WARNING_PREFIX;
     }
 
     if (!isFailureTranslation && GPT_selected_model.find("gemini") != -1) {
@@ -866,12 +851,24 @@ bool IsContextRetryEnabled() {
     return NormalizeRetryFlag(GPT_context_retry) == "1";
 }
 
+bool TryExtractTranslation(const JsonValue &in root, string &out translation) {
+    JsonValue choices = root["choices"];
+    if (choices.isArray() && choices.size() > 0 &&
+        choices[0].isObject() &&
+        choices[0]["message"].isObject() &&
+        choices[0]["message"]["content"].isString()) {
+        translation = choices[0]["message"]["content"].asString();
+        return true;
+    }
+    return false;
+}
+
 bool IsOverlongTranslation(const string &in translation, const string &in sourceText) {
     string trimmedSource = sourceText.Trim();
     int sourceLength = int(trimmedSource.length());
     if (sourceLength <= 0)
         return false;
-    return int(translation.length()) > sourceLength * 5;
+    return int(translation.length()) > sourceLength * OVERLONG_TRANSLATION_MULTIPLIER;
 }
 
 void EnsureTokenRulesLoaded() {
