@@ -12,7 +12,7 @@ string GetTitle() {
 
 // The version number will be replaced during the installation process
 string GetVersion() {
-    return "1.7.5";
+    return "1.8";
 }
 
 string GetDesc() {
@@ -539,12 +539,14 @@ void ServerLogout() {
 // JSON String Escape Function
 string JsonEscape(const string &in input) {
     string output = input;
-    output.replace("\\", "\\\\");
-    output.replace("\"", "\\\"");
-    output.replace("\n", "\\n");
-    output.replace("\r", "\\r");
-    output.replace("\t", "\\t");
-    output.replace("/", "\\/");
+    output = output.replace("\\", "\\\\");
+    output = output.replace("\"", "\\\"");
+    output = output.replace("\n", "\\n");
+    output = output.replace("\r", "\\r");
+    output = output.replace("\t", "\\t");
+    output = output.replace("\b", "\\b");
+    output = output.replace("\f", "\\f");
+    output = output.replace("/", "\\/");
     return output;
 }
 
@@ -641,8 +643,18 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
             if (remainingTokens > 0) {
                 int charBudget = remainingTokens * 4;
                 int subtitleLength = int(subtitle.length());
-                if (charBudget < subtitleLength)
-                    subtitle = subtitle.substr(subtitleLength - charBudget, charBudget);
+                if (charBudget < subtitleLength) {
+                    int startIdx = subtitleLength - charBudget;
+                    while (startIdx < subtitleLength) {
+                        uint8 c = subtitle[startIdx];
+                        if (c < 128 || c >= 192) break;
+                        startIdx++;
+                    }
+                    if (startIdx < subtitleLength)
+                        subtitle = subtitle.substr(startIdx);
+                    else
+                        subtitle = "";
+                }
                 contextSegments.insertAt(0, subtitle);
             }
             usedContextTokens = availableForContext;
@@ -951,6 +963,8 @@ string ExecuteWithRetry(const string &in url, const string &in headers, const st
         if (response != "" || retryModeInt == 0 || (retryModeInt == 1 && attempts >= 1))
             break;
         attempts++;
+        if (attempts >= 10) // Safety break to prevent infinite loops
+            break;
     }
     return response;
 }

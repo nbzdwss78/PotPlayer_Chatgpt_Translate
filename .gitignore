@@ -1,1 +1,7 @@
 releases/archive.7z
+
+.gemini/
+gha-creds-*.json
+.idea/
+__pycache__/
+*.pyc
