@@ -275,7 +275,7 @@ graph TD
         direction TB
         ContextMode -- "无上下文版" --> NoContextPrompt[无上下文]
         ContextMode -- "带上下文版" --> CalcBudget[计算 Token 预算]
-        CalcBudget --> TrimHist[裁剪历史\n(丢弃旧的 / 智能裁剪)]
+        CalcBudget --> TrimHist["裁剪历史\n(丢弃旧的 / 智能裁剪)"]
         TrimHist --> BuildBlock[构建上下文块]
     end
 
