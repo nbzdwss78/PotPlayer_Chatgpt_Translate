@@ -1,3 +1,35 @@
+# 📢 PotPlayer ChatGPT Translate v1.9.0
+
+## 📦 下载地址 / Download
+
+| 渠道 (Channel) | 下载链接 (Download Link) |
+| --- | --- |
+| **GitHub (Global)** | [👉 Download Latest Installer (v1.9.0)](https://github.com/Felix3322/PotPlayer_ChatGPT_Translate/releases/latest) |
+| **Gitee (China)** | [🚀 国内镜像快速下载](https://gitee.com/felix3322/PotPlayer_ChatGPT_Translate/raw/master/releases/latest/installer.exe) |
+
+---
+
+## 🔧 更新内容 / Update Highlights
+
+**本次更新带来了架构级的稳定性提升和对小模型的深度优化：**
+
+*   **[重构] 统一重试循环 (Unified Retry Loop)**：彻底重构了核心翻译逻辑，现在网络错误、API 报错和幻觉检测共享同一个重试计数器。这意味着如果网络偶尔超时，或者模型偶尔产生幻觉，脚本都能智能地利用剩余的重试机会自动恢复，再也不会因为单一类型的失败而卡死。
+*   **[新增] 反幻觉机制 (Anti-Hallucination)**：新增了专门针对模型“幻觉”的检测功能。如果模型输出了长度异常（超过原文 5 倍）的内容，插件会将其视为失败并自动重试。此功能可在安装时选择开启或关闭。
+*   **[新增] 小模型优化模式 (Small Model Mode)**：专为 `gpt-4o-mini`, `gemini-flash` 等轻量级模型设计。开启后，插件会严格分离 System Prompt（指令/上下文）和 User Prompt（仅原文），或者将指令移出 User Prompt，防止小模型将翻译指令误认为是需要翻译的文本，大幅提升小模型的指令遵循能力。
+*   **[优化] 上下文缓存命中率 (Cache Hit Rate)**：针对支持 Context Caching 的模型（如 DeepSeek, OpenAI），优化了 Prompt 结构，确保 System Prompt 前缀更加稳定，从而显著提高缓存命中率，降低 API 成本并提升速度。
+
+---
+
+## 📸 预览 / Screenshots
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/d21a23f8-d580-400d-8e94-efc618b9c541" width="90%" alt="Banner" />
+  <br><br>
+  <img src="https://github.com/user-attachments/assets/ed644de9-f878-4978-bb54-5f1be48ad7d0" width="200" alt="Settings" />
+</p>
+
+---
+
 # 📢 PotPlayer ChatGPT Translate v1.8
 
 ## 📦 下载地址 / Download

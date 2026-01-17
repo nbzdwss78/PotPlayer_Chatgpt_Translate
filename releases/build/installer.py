@@ -16,7 +16,7 @@ from openai import OpenAI
 import win32com.client
 from PyQt6 import QtWidgets, QtCore, QtGui
 
-PLUGIN_VERSION = "1.7.2"
+PLUGIN_VERSION = "1.9.0"
 
 # ========= Helpers for bundled resources =========
 
@@ -313,8 +313,8 @@ def generate_uninstaller(uninstall_bat_path, files_to_delete, reg_key):
         f.write("\nexit\n")
 
 def apply_preconfig(file_path, api_key, model, api_base, delay_ms, retry_mode, debug_mode,
-                    context_retry=None, context_budget=None, context_truncation=None, context_cache_mode=None,
-                    token_limits_json=None):
+                    check_hallucination=None, context_budget=None, context_truncation=None, context_cache_mode=None,
+                    small_model=False, token_limits_json=None):
     try:
         api_base = _normalize_api_url_for_config(api_base)
         with open(file_path, "r", encoding="utf-8") as f:
@@ -324,9 +324,12 @@ def apply_preconfig(file_path, api_key, model, api_base, delay_ms, retry_mode, d
         data = re.sub(r'pre_apiUrl\s*=\s*".*?"', f'pre_apiUrl = "{api_base}"', data)
         data = re.sub(r'pre_delay_ms\s*=\s*".*?"', f'pre_delay_ms = "{delay_ms}"', data)
         data = re.sub(r'pre_retry_mode\s*=\s*".*?"', f'pre_retry_mode = "{retry_mode}"', data)
-        if context_retry is not None:
-            retry_value = "1" if str(context_retry) in ("1", "true", "True", "on", "yes") else "0"
-            data = re.sub(r'pre_context_retry\s*=\s*".*?"', f'pre_context_retry = "{retry_value}"', data)
+        if small_model is not None:
+            val = "1" if small_model else "0"
+            data = re.sub(r'pre_small_model\s*=\s*".*?"', f'pre_small_model = "{val}"', data)
+        if check_hallucination is not None:
+            retry_value = "1" if str(check_hallucination) in ("1", "true", "True", "on", "yes") else "0"
+            data = re.sub(r'pre_check_hallucination\s*=\s*".*?"', f'pre_check_hallucination = "{retry_value}"', data)
         if context_budget is not None:
             data = re.sub(r'pre_context_token_budget\s*=\s*".*?"', f'pre_context_token_budget = "{context_budget}"', data)
         if context_truncation is not None:
@@ -425,7 +428,7 @@ class InstallThread(QtCore.QThread):
         self._loop = None
         return ans
 
-    def __init__(self, install_dir, versions, script_dir, language, api_key, model, api_base, delay_ms, retry_mode, debug_mode, context_retry, context_budget, context_truncation, context_cache_mode):
+    def __init__(self, install_dir, versions, script_dir, language, api_key, model, api_base, delay_ms, retry_mode, debug_mode, check_hallucination, context_budget, context_truncation, context_cache_mode, small_model):
         super().__init__()
         self.install_dir = install_dir
         self.versions = list(versions) if versions else []
@@ -437,10 +440,11 @@ class InstallThread(QtCore.QThread):
         self.delay_ms = delay_ms
         self.retry_mode = retry_mode
         self.debug_mode = debug_mode
-        self.context_retry = context_retry
+        self.check_hallucination = check_hallucination
         self.context_budget = context_budget
         self.context_truncation = context_truncation
         self.context_cache_mode = context_cache_mode
+        self.small_model = small_model
         self.files_installed = []
         self._loop = None
         self._answer = None
@@ -489,10 +493,11 @@ class InstallThread(QtCore.QThread):
                     shutil.copy(src_path, dest_path)
                     if dest_name.lower().endswith(".as"):
                         apply_preconfig(dest_path, self.api_key, self.model, self.api_base, self.delay_ms, self.retry_mode, self.debug_mode,
-                                        self.context_retry,
+                                        self.check_hallucination,
                                         str(self.context_budget) if variant == "with_context" else None,
                                         self.context_truncation if variant == "with_context" else None,
                                         self.context_cache_mode if variant == "with_context" else None,
+                                        self.small_model,
                                         MODEL_TOKEN_LIMITS_JSON)
                     self.progress.emit(f"Installed {dest_name} (Overwritten).")
                     self.files_installed.append(dest_path)
@@ -521,10 +526,11 @@ class InstallThread(QtCore.QThread):
                         shutil.copy(src_path, new_dest_path)
                         if new_name.lower().endswith(".as"):
                             apply_preconfig(new_dest_path, self.api_key, self.model, self.api_base, self.delay_ms, self.retry_mode, self.debug_mode,
-                                            self.context_retry,
+                                            self.check_hallucination,
                                             str(self.context_budget) if variant == "with_context" else None,
                                             self.context_truncation if variant == "with_context" else None,
                                             self.context_cache_mode if variant == "with_context" else None,
+                                            self.small_model,
                                             MODEL_TOKEN_LIMITS_JSON)
                         self.progress.emit(f"Installed {new_name}.")
                         self.files_installed.append(new_dest_path)
@@ -536,10 +542,11 @@ class InstallThread(QtCore.QThread):
                 shutil.copy(src_path, dest_path)
                 if dest_name.lower().endswith(".as"):
                     apply_preconfig(dest_path, self.api_key, self.model, self.api_base, self.delay_ms, self.retry_mode, self.debug_mode,
-                                    self.context_retry,
+                                    self.check_hallucination,
                                     str(self.context_budget) if variant == "with_context" else None,
                                     self.context_truncation if variant == "with_context" else None,
                                     self.context_cache_mode if variant == "with_context" else None,
+                                    self.small_model,
                                     MODEL_TOKEN_LIMITS_JSON)
                 self.progress.emit(f"Installed {dest_name}.")
                 self.files_installed.append(dest_path)
@@ -762,6 +769,7 @@ class ConfigPage(QtWidgets.QWizardPage):
         self.api_edit = QtWidgets.QLineEdit()
         self.key_edit = QtWidgets.QLineEdit()
         self.key_edit.setEchoMode(QtWidgets.QLineEdit.EchoMode.Password)
+        self.small_model_cb = QtWidgets.QCheckBox()
 
         self.purchase_btn = QtWidgets.QPushButton()
         self.verify_btn = QtWidgets.QPushButton()
@@ -812,6 +820,9 @@ class ConfigPage(QtWidgets.QWizardPage):
         self.form.addRow(s["config_api"], self.api_edit)
         self.form.addRow(s["config_key"], self.key_edit)
         self.key_edit.setPlaceholderText(s["config_key_placeholder"])
+        self.form.addRow(s["smallmodel_label"], self.small_model_cb)
+        self.small_model_cb.setToolTip(s["smallmodel_hint"])
+        self.small_model_cb.setChecked(self.wizard.small_model)
 
         self.purchase_btn.setText(s["purchase_button"])
         self.purchase_btn.setToolTip(s["purchase_hint"])
@@ -921,6 +932,7 @@ class ConfigPage(QtWidgets.QWizardPage):
         self.wizard.model = self.model_edit.text().strip()
         self.wizard.api_base = _normalize_api_url_for_config(self.api_edit.text().strip())
         self.wizard.api_key = self.key_edit.text().strip()
+        self.wizard.small_model = self.small_model_cb.isChecked()
         if self.skip:
             return True
         if not self.verify():
@@ -987,7 +999,7 @@ class RetryPage(QtWidgets.QWizardPage):
         self.wizard.retry_mode = self.combo.currentIndex()
         return True
 
-class ContextRetryPage(QtWidgets.QWizardPage):
+class HallucinationPage(QtWidgets.QWizardPage):
     def __init__(self, wizard):
         super().__init__()
         self.wizard = wizard
@@ -1001,14 +1013,14 @@ class ContextRetryPage(QtWidgets.QWizardPage):
 
     def initializePage(self):
         s = self.wizard.strings
-        self.setTitle(s["cretry_title"])
-        self.intro.setText(s["cretry_intro"])
-        self.checkbox.setText(s["cretry_label"])
-        self.checkbox.setChecked(self.wizard.context_retry)
+        self.setTitle(s["hallucination_title"])
+        self.intro.setText(s["hallucination_intro"])
+        self.checkbox.setText(s["hallucination_label"])
+        self.checkbox.setChecked(self.wizard.check_hallucination)
         set_button_texts_for(self.wizard)
 
     def validatePage(self):
-        self.wizard.context_retry = self.checkbox.isChecked()
+        self.wizard.check_hallucination = self.checkbox.isChecked()
         return True
 
 class ContextPage(QtWidgets.QWizardPage):
@@ -1150,10 +1162,11 @@ class ProgressPage(QtWidgets.QWizardPage):
             self.wizard.delay_ms,
             self.wizard.retry_mode,
             self.wizard.debug_mode,
-            self.wizard.context_retry,
+            self.wizard.check_hallucination,
             self.wizard.context_token_budget,
             self.wizard.context_truncation_mode,
             self.wizard.context_cache_mode,
+            self.wizard.small_model,
         )
         self.thread.progress.connect(self.append_text)
         self.thread.ask_file_exists.connect(self.on_ask_file_exists)
@@ -1237,10 +1250,11 @@ class InstallerWizard(QtWidgets.QWizard):
         self.delay_ms = 0
         self.retry_mode = 0
         self.debug_mode = False
-        self.context_retry = False
+        self.check_hallucination = False
         self.context_token_budget = 6000
         self.context_truncation_mode = "drop_oldest"
         self.context_cache_mode = "auto"
+        self.small_model = False
         self.has_context_variant = True
 
         self.setWizardStyle(QtWidgets.QWizard.WizardStyle.ModernStyle)
@@ -1254,7 +1268,7 @@ class InstallerWizard(QtWidgets.QWizard):
         self.addPage(ConfigPage(self))
         self.addPage(DelayPage(self))
         self.addPage(RetryPage(self))
-        self.addPage(ContextRetryPage(self))
+        self.addPage(HallucinationPage(self))
         self.addPage(ContextPage(self))
         self.addPage(DebugPage(self))
         self.addPage(ProgressPage(self))

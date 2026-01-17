@@ -13,7 +13,7 @@ string GetTitle() {
 
 // The version number will be replaced during the installation process
 string GetVersion() {
-    return "1.8-wc";
+    return "1.9.0-wc";
 }
 
 string GetDesc() {
@@ -30,23 +30,19 @@ string GetLoginTitle() {
 string GetLoginDesc() {
     return "{$CP949=모델 이름, API 주소, 선택적 nullkey, 지연(ms) 및 재시도 모드(0-3)를 입력하십시오 (예: gpt-5-mini|https://api.openai.com/v1/chat/completions|nullkey|500|retry1).$}"
          + "{$CP949=\n\n설치 프로그램에서 미리 구성한 값이 있다면 PotPlayer 패널에서 다시 설정하기 전까지 해당 값을 사용하며, 패널에서 설정하면 해당 설정이 항상 우선 적용됩니다.$}"
-         + "{$CP949=\n\n선택적으로 cRetry 를 추가하면 번역이 원문보다 과도하게 길 때 자동으로 재시도합니다.$}"
          + "{$CP950=請輸入模型名稱、API 地址、可選的 nullkey、延遲毫秒與重試模式(0-3)（例如: gpt-5-mini|https://api.openai.com/v1/chat/completions|nullkey|500|retry1）。$}"
          + "{$CP950=\n\n如果安裝包已寫入預設配置，在 PotPlayer 面板中未重新設定之前會沿用這些配置；一旦在面板中調整，將始終以面板設定為準。$}"
-         + "{$CP950=\n\n可選加上 cRetry，在翻譯結果過長時自動重試。$}"
          + "{$CP936=请输入模型名称、API 地址、可选的 nullkey、延迟毫秒和重试模式(0-3)（例如: gpt-5-mini|https://api.openai.com/v1/chat/completions|nullkey|500|retry1）。$}"
          + "{$CP936=\n\n如果安装包已经写入默认配置，在 PotPlayer 面板中没有重新设置之前会继续使用这些配置；一旦在面板中修改，将始终以面板设置为准。$}"
-         + "{$CP936=\n\n可选追加 cRetry，当翻译结果明显过长时自动重试。$}"
          + "{$CP0=Please enter the model name, API URL, optional 'nullkey', optional delay in ms, and retry mode 0-3 (e.g., gpt-5-mini|https://api.openai.com/v1/chat/completions|nullkey|500|retry1).$}"
-         + "{$CP0=\n\nInstaller defaults will remain in effect until you update the settings in PotPlayer's panel, and any panel changes will always take priority.$}"
-         + "{$CP0=\n\nOptionally append cRetry to retry when translations are far longer than the source line.$}";
+         + "{$CP0=\n\nInstaller defaults will remain in effect until you update the settings in PotPlayer's panel, and any panel changes will always take priority.$}";
 }
 
 string GetUserText() {
-    return "{$CP949=모델 이름|API 주소|nullkey|지연(ms)|재시도 모드 (현재: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | cRetry=" + (IsContextRetryEnabled() ? "on" : "off") + ")$}"
-         + "{$CP950=模型名稱|API 地址|nullkey|延遲ms|重試模式 (目前: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | cRetry=" + (IsContextRetryEnabled() ? "on" : "off") + ")$}"
-         + "{$CP936=模型名称|API 地址|nullkey|延迟ms|重试模式 (目前: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | cRetry=" + (IsContextRetryEnabled() ? "on" : "off") + ")$}"
-         + "{$CP0=Model Name|API URL|nullkey|Delay ms|Retry mode (Current: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + " | cRetry=" + (IsContextRetryEnabled() ? "on" : "off") + ")$}";
+    return "{$CP949=모델 이름|API 주소|nullkey|지연(ms)|재시도 모드 (현재: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + ")$}"
+         + "{$CP950=模型名稱|API 地址|nullkey|延遲ms|重試模式 (目前: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + ")$}"
+         + "{$CP936=模型名称|API 地址|nullkey|延迟ms|重试模式 (目前: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + ")$}"
+         + "{$CP0=Model Name|API URL|nullkey|Delay ms|Retry mode (Current: " + GPT_selected_model + " | " + GPT_apiUrl + " | " + GPT_delay_ms + " | " + GPT_retry_mode + ")$}";
 }
 
 string GetPasswordText() {
@@ -60,14 +56,14 @@ string GetPasswordText() {
 // Pre-configured values (auto-filled by installer)
 // No-context identifiers are prefixed to avoid conflicts with other subtitle translator scripts.
 const string GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX = "[Translation failed - please share a screenshot with the developer] ";
-const int OVERLONG_TRANSLATION_MULTIPLIER = 5;
 
 string GPT_pre_api_key = ""; // will be replaced during installation
 string GPT_pre_selected_model = "gpt-5-mini"; // will be replaced during installation
 string GPT_pre_apiUrl = "https://api.openai.com/v1/chat/completions"; // will be replaced during installation
 string GPT_pre_delay_ms = "0"; // will be replaced during installation
 string GPT_pre_retry_mode = "0"; // will be replaced during installation
-string GPT_pre_context_retry = "0"; // will be replaced during installation
+string GPT_pre_small_model = "0"; // 0 | 1
+string GPT_pre_check_hallucination = "0"; // 0 | 1
 string GPT_pre_model_token_limits_json = "{}"; // serialized token limit rules (injected by installer)
 
 string GPT_api_key = GPT_pre_api_key;
@@ -75,7 +71,8 @@ string GPT_selected_model = GPT_pre_selected_model; // Default model
 string GPT_apiUrl = GPT_pre_apiUrl; // Default API URL
 string GPT_delay_ms = GPT_pre_delay_ms; // Request delay in ms
 string GPT_retry_mode = GPT_pre_retry_mode; // Auto retry mode
-string GPT_context_retry = GPT_pre_context_retry; // Retry when translation seems too long
+string GPT_small_model = GPT_pre_small_model;
+string GPT_check_hallucination = GPT_pre_check_hallucination;
 string GPT_UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
 bool GPT_token_rules_initialized = false;
 int GPT_default_model_token_limit = 4096;
@@ -114,17 +111,19 @@ void EnsureInstallerDefaultsPersisted() {
     EnsureConfigDefault("wc_apiUrl", GPT_pre_apiUrl);
     EnsureConfigDefault("wc_delay_ms", GPT_pre_delay_ms);
     EnsureConfigDefault("wc_retry_mode", GPT_pre_retry_mode);
-    EnsureConfigDefault("wc_context_retry", GPT_pre_context_retry);
+    EnsureConfigDefault("wc_small_model", GPT_pre_small_model);
+    EnsureConfigDefault("wc_check_hallucination", GPT_pre_check_hallucination);
 }
 
 void RefreshConfiguration() {
     EnsureInstallerDefaultsPersisted();
-    GPT_api_key = LoadInstallerConfig("wc_api_key", GPT_pre_api_key);
-    GPT_selected_model = LoadInstallerConfig("wc_selected_model", GPT_pre_selected_model);
-    GPT_apiUrl = LoadInstallerConfig("wc_apiUrl", GPT_pre_apiUrl);
-    GPT_delay_ms = LoadInstallerConfig("wc_delay_ms", GPT_pre_delay_ms);
-    GPT_retry_mode = LoadInstallerConfig("wc_retry_mode", GPT_pre_retry_mode);
-    GPT_context_retry = NormalizeRetryFlag(LoadInstallerConfig("wc_context_retry", GPT_pre_context_retry));
+    GPT_api_key = LoadInstallerConfig("wc_api_key", GPT_pre_api_key, "gpt_api_key");
+    GPT_selected_model = LoadInstallerConfig("wc_selected_model", GPT_pre_selected_model, "gpt_selected_model");
+    GPT_apiUrl = LoadInstallerConfig("wc_apiUrl", GPT_pre_apiUrl, "gpt_apiUrl");
+    GPT_delay_ms = LoadInstallerConfig("wc_delay_ms", GPT_pre_delay_ms, "gpt_delay_ms");
+    GPT_retry_mode = LoadInstallerConfig("wc_retry_mode", GPT_pre_retry_mode, "gpt_retry_mode");
+    GPT_small_model = LoadInstallerConfig("wc_small_model", GPT_pre_small_model, "gpt_small_model");
+    GPT_check_hallucination = LoadInstallerConfig("wc_check_hallucination", GPT_pre_check_hallucination, "gpt_check_hallucination");
 }
 
 // Supported Language List
@@ -278,58 +277,6 @@ string BuildAuthHeaders(const string &in key) {
     return headers;
 }
 
-string NormalizeRetryFlag(const string &in value) {
-    string trimmed = value.Trim();
-    if (trimmed == "")
-        return "0";
-    string lower = trimmed.MakeLower();
-    if (lower == "1" || lower == "true" || lower == "on" || lower == "yes" || lower == "enable" || lower == "enabled")
-        return "1";
-    return "0";
-}
-
-bool IsContextRetryEnabled() {
-    return NormalizeRetryFlag(GPT_context_retry) == "1";
-}
-
-bool TryExtractTranslation(const JsonValue &in root, string &out translation) {
-    JsonValue choices = root["choices"];
-    if (choices.isArray() && choices.size() > 0 &&
-        choices[0].isObject() &&
-        choices[0]["message"].isObject() &&
-        choices[0]["message"]["content"].isString()) {
-        translation = choices[0]["message"]["content"].asString();
-        return true;
-    }
-    return false;
-}
-
-bool IsOverlongTranslation(const string &in translation, const string &in sourceText) {
-    string trimmedSource = sourceText.Trim();
-    int sourceLength = int(trimmedSource.length());
-    if (sourceLength <= 0)
-        return false;
-    return int(translation.length()) > sourceLength * OVERLONG_TRANSLATION_MULTIPLIER;
-}
-
-string ExecuteWithRetry(const string &in url, const string &in headers, const string &in payload, int delayInt, int retryModeInt) {
-    string response = "";
-    int attempts = 0;
-    while (true) {
-        if (attempts == 0 || (retryModeInt == 3 && attempts > 0)) {
-            if (delayInt > 0)
-                HostSleep(delayInt);
-        }
-        response = HostUrlGetString(url, GPT_UserAgent, headers, payload);
-        if (response != "" || retryModeInt == 0 || (retryModeInt == 1 && attempts >= 1))
-            break;
-        attempts++;
-        if (attempts >= 10) // Safety break to prevent infinite loops
-            break;
-    }
-    return response;
-}
-
 // API Key and API Base verification process
 string ServerLogin(string User, string Pass) {
     string errorAccum = "";
@@ -350,7 +297,10 @@ string ServerLogin(string User, string Pass) {
     bool allowNullApiKey = (Pass == "" || lowerPass == "nullkey");
     string delayToken = "";
     string retryToken = "";
-    string cRetryToken = "";
+    string cacheToken = "";
+    string smallModelToken = "";
+    string halluToken = "";
+    string normalizedCacheMode = GPT_context_cache_mode;
     if (tokens.length() >= 1) {
         userModel = tokens[0];
     }
@@ -361,14 +311,16 @@ string ServerLogin(string User, string Pass) {
             allowNullApiKey = true;
         else if (lowered.length() >= 5 && lowered.substr(0,5) == "retry" && IsDigits(t.substr(5)))
             retryToken = t.substr(5);
-        else if (lowered == "cretry")
-            cRetryToken = "1";
-        else if (lowered == "nocretry")
-            cRetryToken = "0";
-        else if (lowered.length() >= 7 && lowered.substr(0,7) == "cretry=")
-            cRetryToken = lowered.substr(7);
         else if (IsDigits(t))
             delayToken = t;
+        else if (lowered == "smallmodel=1" || lowered == "smallmodel")
+            smallModelToken = "1";
+        else if (lowered == "smallmodel=0")
+            smallModelToken = "0";
+        else if (lowered == "checkhallucination=1" || lowered == "hallucination=1")
+            halluToken = "1";
+        else if (lowered == "checkhallucination=0" || lowered == "hallucination=0")
+            halluToken = "0";
         else if (customApiUrl == "")
             customApiUrl = t;
     }
@@ -376,8 +328,10 @@ string ServerLogin(string User, string Pass) {
         GPT_retry_mode = retryToken;
     if (delayToken != "")
         GPT_delay_ms = delayToken;
-    if (cRetryToken != "")
-        GPT_context_retry = NormalizeRetryFlag(cRetryToken);
+    if (smallModelToken != "")
+        GPT_small_model = smallModelToken;
+    if (halluToken != "")
+        GPT_check_hallucination = halluToken;
     if (userModel == "") {
         errorAccum += "Model name not entered. Please enter a valid model name.\n";
         return errorAccum;
@@ -417,7 +371,8 @@ string ServerLogin(string User, string Pass) {
                 HostSaveString("wc_apiUrl", apiUrlLocal);
                 HostSaveString("wc_delay_ms", GPT_delay_ms);
                 HostSaveString("wc_retry_mode", GPT_retry_mode);
-                HostSaveString("wc_context_retry", GPT_context_retry);
+                HostSaveString("wc_small_model", GPT_small_model);
+                HostSaveString("wc_check_hallucination", GPT_check_hallucination);
                 return "200 ok";
             } else {
                 if (testRoot.isObject() && testRoot["error"].isObject() && testRoot["error"]["message"].isString())
@@ -446,8 +401,9 @@ string ServerLogin(string User, string Pass) {
                     HostSaveString("wc_selected_model", GPT_selected_model);
                     HostSaveString("wc_apiUrl", apiUrlLocal);
                     HostSaveString("wc_delay_ms", GPT_delay_ms);
-                    HostSaveString("wc_retry_mode", GPT_retry_mode);
-                    HostSaveString("wc_context_retry", GPT_context_retry);
+                HostSaveString("wc_retry_mode", GPT_retry_mode);
+                HostSaveString("wc_small_model", GPT_small_model);
+                HostSaveString("wc_check_hallucination", GPT_check_hallucination);
                     return "Warning: Your API base was auto-corrected to: " + apiUrlLocal + "\n200 ok";
                 } else {
                     if (correctedRoot.isObject() && correctedRoot["error"].isObject() && correctedRoot["error"]["message"].isString())
@@ -515,27 +471,27 @@ void ServerLogout() {
     GPT_apiUrl = GPT_pre_apiUrl;
     GPT_delay_ms = GPT_pre_delay_ms;
     GPT_retry_mode = GPT_pre_retry_mode;
-    GPT_context_retry = GPT_pre_context_retry;
+    GPT_small_model = GPT_pre_small_model;
+    GPT_check_hallucination = GPT_pre_check_hallucination;
     HostSaveString("wc_api_key", "");
     HostSaveString("wc_selected_model", GPT_selected_model);
     HostSaveString("wc_apiUrl", GPT_apiUrl);
     HostSaveString("wc_delay_ms", GPT_delay_ms);
     HostSaveString("wc_retry_mode", GPT_retry_mode);
-    HostSaveString("wc_context_retry", GPT_context_retry);
+    HostSaveString("wc_small_model", GPT_small_model);
+    HostSaveString("wc_check_hallucination", GPT_check_hallucination);
     HostPrintUTF8("Successfully logged out.\n");
 }
 
 // JSON String Escape Function
 string JsonEscape(const string &in input) {
     string output = input;
-    output = output.replace("\\", "\\\\");
-    output = output.replace("\"", "\\\"");
-    output = output.replace("\n", "\\n");
-    output = output.replace("\r", "\\r");
-    output = output.replace("\t", "\\t");
-    output = output.replace("\b", "\\b");
-    output = output.replace("\f", "\\f");
-    output = output.replace("/", "\\/");
+    output.replace("\\", "\\\\");
+    output.replace("\"", "\\\"");
+    output.replace("\n", "\\n");
+    output.replace("\r", "\\r");
+    output.replace("\t", "\\t");
+    output.replace("/", "\\/");
     return output;
 }
 
@@ -623,6 +579,15 @@ int GetModelMaxTokens(const string &in modelName) {
     return GPT_default_model_token_limit;
 }
 
+string ExecuteSimple(const string &in url, const string &in headers, const string &in payload) {
+    return HostUrlGetString(url, GPT_UserAgent, headers, payload);
+}
+
+bool IsOverlongTranslation(const string &in translation, const string &in original) {
+    if (original.length() == 0) return false;
+    return translation.length() > (original.length() * 5);
+}
+
 // Translation Function (Without Context Support)
 string Translate(string Text, string &in SrcLang, string &in DstLang) {
     RefreshConfiguration();
@@ -643,79 +608,127 @@ string Translate(string Text, string &in SrcLang, string &in DstLang) {
 
     string systemMsg = "You translate subtitles. Output only the translation.";
     string userMsg = "Translate from " + (SrcLang == "" ? "Auto Detect" : SrcLang) + " to " + DstLang + ":\n" + Text;
+    
+    // Separate instruction from user content if Small Model Mode is enabled
+    if (GPT_small_model == "1") {
+        systemMsg = "You translate subtitles from " + (SrcLang == "" ? "Auto Detect" : SrcLang) + " to " + DstLang + ". Output only the translation.";
+        userMsg = Text;
+    }
 
     string escapedSystemMsg = JsonEscape(systemMsg);
     string escapedUserMsg = JsonEscape(userMsg);
 
     string requestData = "{\"model\":\"" + GPT_selected_model + "\"," 
-                         "\"messages\":[{\"role\":\"system\",\"content\":\"" + escapedSystemMsg + "\"}," 
-                         "{\"role\":\"user\",\"content\":\"" + escapedUserMsg + "\"}]}";
+                         "\"messages\":[{\"role\":\"system\",\"content\":\"" + escapedTestSystemMsg + "\"}," 
+                         "{\"role\":\"user\",\"content\":\"" + escapedTestUserMsg + "\"}]}";
 
     string headers = BuildAuthHeaders(GPT_api_key);
     int delayInt = ParseInt(GPT_delay_ms);
     int retryModeInt = ParseInt(GPT_retry_mode);
-    string response = ExecuteWithRetry(GPT_apiUrl, headers, requestData, delayInt, retryModeInt);
+    string response = "";
+
+    int maxRetries = retryModeInt;
+    if (maxRetries < 0) maxRetries = 0;
+    if (retryModeInt == 2) maxRetries = 999999;
+    if (retryModeInt == 3) maxRetries = 999999;
+
+    int attempts = 0;
+    while (attempts <= maxRetries) {
+        if (attempts > 0) {
+            if (delayInt > 0) HostSleep(delayInt);
+        }
+
+        response = ExecuteSimple(GPT_apiUrl, headers, requestData);
+
+        if (response == "") {
+            // Network error
+            attempts++;
+            continue;
+        }
+
+        JsonReader Reader;
+        JsonValue Root;
+        if (!Reader.parse(response, Root)) {
+             HostPrintUTF8("Failed to parse API response.\n");
+             attempts++;
+             continue;
+        }
+
+        JsonValue choices = Root["choices"];
+        if (choices.isArray() && choices.size() > 0 &&
+            choices[0].isObject() &&
+            choices[0]["message"].isObject() &&
+            choices[0]["message"]["content"].isString()) {
+            
+            string translatedText = choices[0]["message"]["content"].asString();
+            
+            // Hallucination Check
+            if (GPT_check_hallucination == "1" && IsOverlongTranslation(translatedText, Text)) {
+                 HostPrintUTF8("Hallucination detected (Length > 5x). Retrying...\n");
+                 attempts++;
+                 continue;
+            }
+
+            bool isFailureTranslation = translatedText.length() >= GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX.length() &&
+                                        translatedText.substr(0, GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX.length()) == GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX;
+
+            if (!isFailureTranslation && GPT_selected_model.find("gemini") != -1) {
+                while (translatedText.length() > 0 && translatedText.substr(translatedText.length() - 1, 1) == "\n") {
+                    translatedText = translatedText.substr(0, translatedText.length() - 1);
+                }
+            }
+            if (!isFailureTranslation && (DstLang == "fa" || DstLang == "ar" || DstLang == "he")) {
+                string UNICODE_RLE = "\u202B";
+                translatedText = UNICODE_RLE + translatedText;
+            }
+            SrcLang = "UTF8";
+            DstLang = "UTF8";
+            return translatedText.Trim();
+        } else if (Root.isObject() &&
+                   Root["error"].isObject() &&
+                   Root["error"]["message"].isString()) {
+            string errorMessage = Root["error"]["message"].asString();
+            HostPrintUTF8("API Error: " + errorMessage + "\n");
+             // Retry on API error? Yes, per Unified Loop logic
+            attempts++;
+            continue;
+        } else {
+             // Unknown format
+            HostPrintUTF8("Translation failed. Unknown response format.\n");
+            attempts++;
+            continue;
+        }
+    }
+
     if (response == "") {
         string failureMessage = "Translation request failed. Please check network connection or API Key.";
         HostPrintUTF8(failureMessage + "\n");
         return FormatFailureTranslation("", failureMessage);
     }
+    
+    // Fallback for when loop exhausts but we have a response (usually means parsing failed repeatedly or error returned repeatedly)
+    return FormatFailureTranslation(response, "Translation failed after retries.");
+}
 
-    JsonReader Reader;
-    JsonValue Root;
-    if (!Reader.parse(response, Root)) {
-        HostPrintUTF8("Failed to parse API response.\n");
-        return FormatFailureTranslation(response, "Failed to parse API response.");
+string FormatFailureTranslation(const string &in rawResponse, const string &in fallbackMessage) {
+    string detail = rawResponse.Trim();
+    if (detail == "")
+        detail = fallbackMessage;
+    return GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX + detail;
+}
+
+// Plugin Initialization
+void OnInitialize() {
+    HostPrintUTF8("ChatGPT translation plugin loaded.\n");
+    RefreshConfiguration();
+    if (GPT_api_key != "") {
+        HostPrintUTF8("Saved API Key, model name, and API URL loaded.\n");
     }
+}
 
-    string translatedText = "";
-    if (TryExtractTranslation(Root, translatedText)) {
-        bool isFailureTranslation = translatedText.length() >= GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX.length() &&
-                                    translatedText.substr(0, GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX.length()) == GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX;
-
-        if (!isFailureTranslation && IsContextRetryEnabled() && IsOverlongTranslation(translatedText, Text)) {
-            HostPrintUTF8("Translation output seems too long compared to the source. Retrying once.\n");
-            string retryResponse = ExecuteWithRetry(GPT_apiUrl, headers, requestData, delayInt, 0);
-            if (retryResponse != "") {
-                JsonReader retryReader;
-                JsonValue retryRoot;
-                if (retryReader.parse(retryResponse, retryRoot)) {
-                    string retryTranslation = "";
-                    if (TryExtractTranslation(retryRoot, retryTranslation)) {
-                        bool retryOverlong = IsOverlongTranslation(retryTranslation, Text);
-                        if (!retryOverlong || retryTranslation.length() < translatedText.length())
-                            translatedText = retryTranslation;
-                    }
-                }
-            }
-            isFailureTranslation = translatedText.length() >= GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX.length() &&
-                                   translatedText.substr(0, GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX.length()) == GPT_WC_TRANSLATION_FAILURE_WARNING_PREFIX;
-        }
-
-        if (!isFailureTranslation && GPT_selected_model.find("gemini") != -1) {
-            while (translatedText.length() > 0 && translatedText.substr(translatedText.length() - 1, 1) == "\n") {
-                translatedText = translatedText.substr(0, translatedText.length() - 1);
-            }
-        }
-        if (!isFailureTranslation && (DstLang == "fa" || DstLang == "ar" || DstLang == "he")) {
-            string UNICODE_RLE = "\u202B";
-            translatedText = UNICODE_RLE + translatedText;
-        }
-        SrcLang = "UTF8";
-        DstLang = "UTF8";
-        return translatedText.Trim();
-    }
-
-    if (Root.isObject() &&
-        Root["error"].isObject() &&
-        Root["error"]["message"].isString()) {
-        string errorMessage = Root["error"]["message"].asString();
-        HostPrintUTF8("API Error: " + errorMessage + "\n");
-        return FormatFailureTranslation(response, "API Error: " + errorMessage);
-    } else {
-        HostPrintUTF8("Translation failed. Please check input parameters or API Key configuration.\n");
-        return FormatFailureTranslation(response, "Translation failed. Please check input parameters or API Key configuration.");
-    }
+// Plugin Finalization
+void OnFinalize() {
+    HostPrintUTF8("ChatGPT translation plugin unloaded.\n");
 }
 
 string FormatFailureTranslation(const string &in rawResponse, const string &in fallbackMessage) {
