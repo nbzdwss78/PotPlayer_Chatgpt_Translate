@@ -253,11 +253,97 @@ Yi 34B Chat: yi-34b-chat|https://api.lingyi.ai/v1/chat/completions
   <img src="https://i1.hdslb.com/bfs/archive/88992bd0e80ff751771e78675a558b663a728028.jpg" alt="在 Bilibili 上观看">
 </a>
 
-<p align="right">(<a href="#readme-top">返回顶部</a>)</p>
+<p align="right">(<a href="#readme-top">回到顶部</a>)</p>
 
 ---
 
-## 技术栈 🛠
+<details>
+<summary><strong>🛠️ 逻辑流程图 / Logic Flowchart</strong></summary>
+
+```mermaid
+graph TD
+    %% --- Initialization Phase ---
+    Start([开始: Translate]) --> InitConfig[加载配置与Token规则]
+    InitConfig --> CheckAuth{检查 API Key?}
+    CheckAuth -- 否 --> RetError([返回错误信息])
+    CheckAuth -- 是 --> UpdateHist[更新字幕历史]
+
+    %% --- Context Management ---
+    UpdateHist --> ContextMode{插件版本?}
+    
+    subgraph ContextLogic [上下文处理]
+        direction TB
+        ContextMode -- "无上下文版" --> NoContextPrompt[无上下文]
+        ContextMode -- "带上下文版" --> CalcBudget[计算 Token 预算]
+        CalcBudget --> TrimHist[裁剪历史\n(丢弃旧的 / 智能裁剪)]
+        TrimHist --> BuildBlock[构建上下文块]
+    end
+
+    %% --- Prompt Engineering ---
+    subgraph PromptEng [提示词构建]
+        direction TB
+        BuildBlock --> SmallModel{启用小模型模式?}
+        NoContextPrompt --> SmallModel
+        
+        SmallModel -- 是 --> StrictPrompt[System: 身份 + 上下文 + 指令\nUser: 仅字幕原文]
+        SmallModel -- 否 --> StdPrompt[System: 身份 + 上下文\nUser: 指令 + 字幕原文]
+        
+        StrictPrompt --> EscapeJSON[JSON 字符串转义]
+        StdPrompt --> EscapeJSON
+        EscapeJSON --> BuildPayload[构建 JSON 请求体]
+    end
+
+    BuildPayload --> InitLoop[初始化重试计数 = 0]
+
+    %% --- Unified Execution Loop ---
+    subgraph RetrySystem [统一执行与重试循环]
+        direction TB
+        LoopCond{尝试次数 <= 最大值?}
+        LoopCond -- 否 --> FailFinal([返回失败信息])
+        
+        LoopCond -- 是 --> DelayCheck{是重试吗?}
+        DelayCheck -- 是 --> Wait[休眠 (DelayMs)]
+        DelayCheck -- 否 --> CacheBranch
+        Wait --> CacheBranch
+
+        %% Cache Branch
+        CacheBranch{启用缓存模式?}
+        CacheBranch -- 是 --> ReqCache[请求 /responses 端点]
+        CacheBranch -- 否 --> ReqChat
+        
+        ReqCache --> RespCache{响应成功?}
+        RespCache -- 是 --> ParseCache[提取 'output_text']
+        RespCache -- 否 --> LogCacheFail[记录失败] --> ReqChat[请求 /chat/completions]
+        
+        ParseCache --> HallucinationCheck
+        
+        %% Standard Chat Branch
+        ReqChat --> NetCheck{网络连接正常?}
+        NetCheck -- 否 --> IncRetry[尝试次数++] --> LoopCond
+        NetCheck -- 是 --> ParseJSON{JSON 有效?}
+        
+        ParseJSON -- 否 --> IncRetry
+        ParseJSON -- Error --> LogAPIError[记录 API 错误] --> IncRetry
+        ParseJSON -- Success --> ExtractContent[提取内容]
+        
+        ExtractContent --> HallucinationCheck{幻觉检测?}
+        
+        HallucinationCheck -- "长度 > 原文5倍" --> LogHallu[警告: 检测到幻觉] --> IncRetry
+        HallucinationCheck -- 正常 --> SuccessBreak[跳出循环]
+    end
+
+    %% --- Post Processing ---
+    SuccessBreak --> PostProc[后处理]
+    PostProc --> FixNewlines[去除末尾换行\n(Gemini 修复)]
+    FixNewlines --> FixRTL[插入 Unicode RLE\n(阿拉伯语/希伯来语修复)]
+    FixRTL --> ReturnSuccess([返回翻译结果])
+```
+
+</details>
+
+<br>
+
+## 构建工具 🛠
 
 - **AngleScript** – 用于开发插件的脚本语言  
 - **ChatGPT API** – 提供上下文感知的翻译功能  

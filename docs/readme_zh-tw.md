@@ -264,7 +264,93 @@ Yi 34B Chat: yi-34b-chat|https://api.lingyi.ai/v1/chat/completions
 
 ---
 
-## 技術棧 🛠
+<details>
+<summary><strong>🛠️ 邏輯流程圖 / Logic Flowchart</strong></summary>
+
+```mermaid
+graph TD
+    %% --- Initialization Phase ---
+    Start([開始: Translate]) --> InitConfig[載入配置與Token規則]
+    InitConfig --> CheckAuth{檢查 API Key?}
+    CheckAuth -- 否 --> RetError([返回錯誤訊息])
+    CheckAuth -- 是 --> UpdateHist[更新字幕歷史]
+
+    %% --- Context Management ---
+    UpdateHist --> ContextMode{插件版本?}
+    
+    subgraph ContextLogic [上下文處理]
+        direction TB
+        ContextMode -- "無上下文版" --> NoContextPrompt[無上下文]
+        ContextMode -- "帶上下文版" --> CalcBudget[計算 Token 預算]
+        CalcBudget --> TrimHist[裁剪歷史\n(丟棄舊的 / 智能裁剪)]
+        TrimHist --> BuildBlock[構建上下文塊]
+    end
+
+    %% --- Prompt Engineering ---
+    subgraph PromptEng [提示詞構建]
+        direction TB
+        BuildBlock --> SmallModel{啟用小模型模式?}
+        NoContextPrompt --> SmallModel
+        
+        SmallModel -- 是 --> StrictPrompt[System: 身份 + 上下文 + 指令\nUser: 僅字幕原文]
+        SmallModel -- 否 --> StdPrompt[System: 身份 + 上下文\nUser: 指令 + 字幕原文]
+        
+        StrictPrompt --> EscapeJSON[JSON 字串轉義]
+        StdPrompt --> EscapeJSON
+        EscapeJSON --> BuildPayload[構建 JSON 請求體]
+    end
+
+    BuildPayload --> InitLoop[初始化重試計數 = 0]
+
+    %% --- Unified Execution Loop ---
+    subgraph RetrySystem [統一執行與重試循環]
+        direction TB
+        LoopCond{嘗試次數 <= 最大值?}
+        LoopCond -- 否 --> FailFinal([返回失敗訊息])
+        
+        LoopCond -- 是 --> DelayCheck{是重試嗎?}
+        DelayCheck -- 是 --> Wait[休眠 (DelayMs)]
+        DelayCheck -- 否 --> CacheBranch
+        Wait --> CacheBranch
+
+        %% Cache Branch
+        CacheBranch{啟用快取模式?}
+        CacheBranch -- 是 --> ReqCache[請求 /responses 端點]
+        CacheBranch -- 否 --> ReqChat
+        
+        ReqCache --> RespCache{響應成功?}
+        RespCache -- 是 --> ParseCache[提取 'output_text']
+        RespCache -- 否 --> LogCacheFail[記錄失敗] --> ReqChat[請求 /chat/completions]
+        
+        ParseCache --> HallucinationCheck
+        
+        %% Standard Chat Branch
+        ReqChat --> NetCheck{網絡連線正常?}
+        NetCheck -- 否 --> IncRetry[嘗試次數++] --> LoopCond
+        NetCheck -- 是 --> ParseJSON{JSON 有效?}
+        
+        ParseJSON -- 否 --> IncRetry
+        ParseJSON -- Error --> LogAPIError[記錄 API 錯誤] --> IncRetry
+        ParseJSON -- Success --> ExtractContent[提取內容]
+        
+        ExtractContent --> HallucinationCheck{幻覺檢測?}
+        
+        HallucinationCheck -- "長度 > 原文5倍" --> LogHallu[警告: 檢測到幻覺] --> IncRetry
+        HallucinationCheck -- 正常 --> SuccessBreak[跳出循環]
+    end
+
+    %% --- Post Processing ---
+    SuccessBreak --> PostProc[後處理]
+    PostProc --> FixNewlines[去除末尾換行\n(Gemini 修復)]
+    FixNewlines --> FixRTL[插入 Unicode RLE\n(阿拉伯語/希伯來語修復)]
+    FixRTL --> ReturnSuccess([返回翻譯結果])
+```
+
+</details>
+
+<br>
+
+## 構建工具 🛠
 
 * **AngleScript** – 插件開發腳本語言
 * **ChatGPT API** – 提供語境感知翻譯功能

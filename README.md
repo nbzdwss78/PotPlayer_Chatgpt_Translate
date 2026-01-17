@@ -271,66 +271,81 @@ Click below to watch the tutorial on Bilibili:
 
 ```mermaid
 graph TD
-    Start([Start: Translate Text]) --> ConfigCheck{Config Loaded?}
-    
-    %% Initialization Phase
-    ConfigCheck -- No --> LoadConfig[Load Config & Defaults]
-    LoadConfig --> ValidateConfig
-    ConfigCheck -- Yes --> ValidateConfig{Check API Key & Langs}
-    
-    ValidateConfig -- Missing --> ErrorExit([Return Error String])
-    ValidateConfig -- OK --> UpdateHistory[Update Subtitle History]
+    %% --- Initialization Phase ---
+    Start([Start: Translate]) --> InitConfig[Load Config & Token Rules]
+    InitConfig --> CheckAuth{API Key Configured?}
+    CheckAuth -- No --> RetError([Return Error Message])
+    CheckAuth -- Yes --> UpdateHist[Update Subtitle History]
 
-    %% Context Processing
-    UpdateHistory --> ContextBranch{Plugin Variant?}
-    ContextBranch -- "With Context" --> CalcBudget[Calculate Token Budget]
-    CalcBudget --> BuildContext[Build Context Block\n(Smart Trim / Drop Oldest)]
-    BuildContext --> PromptLogic
-    ContextBranch -- "Without Context" --> PromptLogic
-
-    %% Prompt Construction
-    subgraph PromptLogic [Prompt Construction]
+    %% --- Context Management ---
+    UpdateHist --> ContextMode{Plugin Variant?}
+    
+    subgraph ContextLogic [Context Processing]
         direction TB
-        ModeCheck{Small Model Mode?}
-        ModeCheck -- Yes --> StrictMode[Strict Prompt Separation\n(Instruction vs Data)]
-        ModeCheck -- No --> StdMode[Standard Prompt Assembly]
+        ContextMode -- "Without Context" --> NoContextPrompt[No Context]
+        ContextMode -- "With Context" --> CalcBudget[Calculate Token Budget]
+        CalcBudget --> TrimHist[Trim History\n(Drop Oldest / Smart Trim)]
+        TrimHist --> BuildBlock[Build Context Block]
     end
 
-    PromptLogic --> InitLoop[Initialize Retry Loop]
+    %% --- Prompt Engineering ---
+    subgraph PromptEng [Prompt Construction]
+        direction TB
+        BuildBlock --> SmallModel{Small Model Mode?}
+        NoContextPrompt --> SmallModel
+        
+        SmallModel -- Yes --> StrictPrompt[System: Identity + Context + Instruction\nUser: Subtitle Text Only]
+        SmallModel -- No --> StdPrompt[System: Identity + Context\nUser: Instruction + Subtitle Text]
+        
+        StrictPrompt --> EscapeJSON[JSON Escape Strings]
+        StdPrompt --> EscapeJSON
+        EscapeJSON --> BuildPayload[Build JSON Payload]
+    end
 
-    %% Unified Retry Loop
-    subgraph RetryLoop [Unified Retry Loop]
+    BuildPayload --> InitLoop[Init Retry Counter = 0]
+
+    %% --- Unified Execution Loop ---
+    subgraph RetrySystem [Unified Execution & Retry Loop]
         direction TB
         LoopCond{Attempts <= Max?}
-        LoopCond -- No --> FailExit([Return Failure Message])
-        LoopCond -- Yes --> DelayCheck{Is Retry?}
+        LoopCond -- No --> FailFinal([Return Failure Message])
         
-        DelayCheck -- Yes --> DoDelay[Wait Configured Delay]
-        DelayCheck -- No --> CacheCheck
-        DoDelay --> CacheCheck
+        LoopCond -- Yes --> DelayCheck{Is Retry?}
+        DelayCheck -- Yes --> Wait[Sleep Configured Delay]
+        DelayCheck -- No --> CacheBranch
+        Wait --> CacheBranch
 
-        CacheCheck{Context Cache Enabled?}
-        CacheCheck -- Yes --> TryCache[Request /responses Endpoint]
-        TryCache -- Success --> ValidateCache[Validate Output]
-        TryCache -- Fail --> FallbackChat[Fallback to Chat]
-        CacheCheck -- No --> StandardRequest[Request /chat/completions]
-
-        StandardRequest --> RespCheck{Response OK?}
-        FallbackChat --> RespCheck
-        ValidateCache --> HallucinationCheck
-
-        RespCheck -- Network/JSON Error --> IncRetry[Attempts++]
-        IncRetry --> LoopCond
-
-        RespCheck -- OK --> HallucinationCheck{Hallucination Check?}
-        HallucinationCheck -- "Length > 5x Source" --> LogWarn[Log Warning]
-        LogWarn --> IncRetry
+        %% Cache Branch
+        CacheBranch{Cache Mode Enabled?}
+        CacheBranch -- Yes --> ReqCache[POST /responses]
+        CacheBranch -- No --> ReqChat
+        
+        ReqCache --> RespCache{Response OK?}
+        RespCache -- Yes --> ParseCache[Extract 'output_text']
+        RespCache -- No --> LogCacheFail[Log Failure] --> ReqChat[POST /chat/completions]
+        
+        ParseCache --> HallucinationCheck
+        
+        %% Standard Chat Branch
+        ReqChat --> NetCheck{Network OK?}
+        NetCheck -- No --> IncRetry[Attempts++] --> LoopCond
+        NetCheck -- Yes --> ParseJSON{Valid JSON?}
+        
+        ParseJSON -- No --> IncRetry
+        ParseJSON -- Error --> LogAPIError[Log API Error] --> IncRetry
+        ParseJSON -- Success --> ExtractContent[Extract Content]
+        
+        ExtractContent --> HallucinationCheck{Hallucination Check?}
+        
+        HallucinationCheck -- "Length > 5x Source" --> LogHallu[Log Warning: Hallucination] --> IncRetry
         HallucinationCheck -- OK --> SuccessBreak[Break Loop]
     end
 
-    %% Finalization
-    SuccessBreak --> PostProcess[Post-Processing\n(Trim Newlines, RTL Fixes)]
-    PostProcess --> End([Return Translation])
+    %% --- Post Processing ---
+    SuccessBreak --> PostProc[Post-Processing]
+    PostProc --> FixNewlines[Trim Trailing Newlines\n(Gemini Fix)]
+    FixNewlines --> FixRTL[Insert Unicode RLE\n(Arabic/Hebrew Fix)]
+    FixRTL --> ReturnSuccess([Return Translation])
 ```
 
 </details>
