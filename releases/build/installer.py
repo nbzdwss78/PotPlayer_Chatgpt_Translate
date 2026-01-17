@@ -1083,12 +1083,12 @@ class ContextPage(QtWidgets.QWizardPage):
         self.cache_combo.clear()
         self.cache_combo.addItem(s["context_cache_auto"], "auto")
         self.cache_combo.addItem(s["context_cache_off"], "off")
-        cache_mode = getattr(self.wizard, "context_cache_mode", "auto") or "auto"
+        cache_mode = getattr(self.wizard, "context_cache_mode", "off") or "off"
         cache_index = self.cache_combo.findData(cache_mode)
         if cache_index != -1:
             self.cache_combo.setCurrentIndex(cache_index)
         else:
-            self.cache_combo.setCurrentIndex(0)
+            self.cache_combo.setCurrentIndex(1) # Default to Off
         self.cache_hint.setText(s["context_cache_hint"])
 
     def validatePage(self):
@@ -1253,7 +1253,7 @@ class InstallerWizard(QtWidgets.QWizard):
         self.check_hallucination = False
         self.context_token_budget = 6000
         self.context_truncation_mode = "drop_oldest"
-        self.context_cache_mode = "auto"
+        self.context_cache_mode = "off"
         self.small_model = False
         self.has_context_variant = True
 

@@ -73,6 +73,7 @@ string GPT_delay_ms = GPT_pre_delay_ms; // Request delay in ms
 string GPT_retry_mode = GPT_pre_retry_mode; // Auto retry mode
 string GPT_small_model = GPT_pre_small_model;
 string GPT_check_hallucination = GPT_pre_check_hallucination;
+string GPT_context_cache_mode = "off"; // Always off for WC version, but kept for compatibility logic
 string GPT_UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
 bool GPT_token_rules_initialized = false;
 int GPT_default_model_token_limit = 4096;

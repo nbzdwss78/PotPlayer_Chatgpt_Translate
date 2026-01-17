@@ -64,7 +64,7 @@ string GPT_pre_delay_ms = "0"; // will be replaced during installation
 string GPT_pre_retry_mode = "0"; // will be replaced during installation
 string GPT_pre_context_token_budget = "6000"; // approx. tokens reserved for context (0 = auto)
 string GPT_pre_context_truncation_mode = "drop_oldest"; // drop_oldest | smart_trim
-string GPT_pre_context_cache_mode = "auto"; // auto | off
+string GPT_pre_context_cache_mode = "off"; // auto | off
 string GPT_pre_small_model = "0"; // 0 | 1
 string GPT_pre_check_hallucination = "0"; // 0 | 1
 string GPT_pre_model_token_limits_json = "{}"; // serialized token limit rules (injected by installer)
