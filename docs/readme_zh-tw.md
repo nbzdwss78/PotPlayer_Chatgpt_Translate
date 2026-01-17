@@ -309,7 +309,7 @@ graph TD
         LoopCond -- 否 --> FailFinal([返回失敗訊息])
         
         LoopCond -- 是 --> DelayCheck{是重試嗎?}
-        DelayCheck -- 是 --> Wait[休眠 (DelayMs)]
+        DelayCheck -- 是 --> Wait["休眠 (DelayMs)"]
         DelayCheck -- 否 --> CacheBranch
         Wait --> CacheBranch
 
@@ -341,8 +341,8 @@ graph TD
 
     %% --- Post Processing ---
     SuccessBreak --> PostProc[後處理]
-    PostProc --> FixNewlines[去除末尾換行\n(Gemini 修復)]
-    FixNewlines --> FixRTL[插入 Unicode RLE\n(阿拉伯語/希伯來語修復)]
+    PostProc --> FixNewlines["去除末尾換行\n(Gemini 修復)"]
+    FixNewlines --> FixRTL["插入 Unicode RLE\n(阿拉伯語/希伯來語修復)"]
     FixRTL --> ReturnSuccess([返回翻譯結果])
 ```
 
