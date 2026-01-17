@@ -266,6 +266,77 @@ Click below to watch the tutorial on Bilibili:
 
 ---
 
+<details>
+<summary><strong>🛠️ Logic Flowchart / 逻辑流程图</strong></summary>
+
+```mermaid
+graph TD
+    Start([Start: Translate Text]) --> ConfigCheck{Config Loaded?}
+    
+    %% Initialization Phase
+    ConfigCheck -- No --> LoadConfig[Load Config & Defaults]
+    LoadConfig --> ValidateConfig
+    ConfigCheck -- Yes --> ValidateConfig{Check API Key & Langs}
+    
+    ValidateConfig -- Missing --> ErrorExit([Return Error String])
+    ValidateConfig -- OK --> UpdateHistory[Update Subtitle History]
+
+    %% Context Processing
+    UpdateHistory --> ContextBranch{Plugin Variant?}
+    ContextBranch -- "With Context" --> CalcBudget[Calculate Token Budget]
+    CalcBudget --> BuildContext[Build Context Block\n(Smart Trim / Drop Oldest)]
+    BuildContext --> PromptLogic
+    ContextBranch -- "Without Context" --> PromptLogic
+
+    %% Prompt Construction
+    subgraph PromptLogic [Prompt Construction]
+        direction TB
+        ModeCheck{Small Model Mode?}
+        ModeCheck -- Yes --> StrictMode[Strict Prompt Separation\n(Instruction vs Data)]
+        ModeCheck -- No --> StdMode[Standard Prompt Assembly]
+    end
+
+    PromptLogic --> InitLoop[Initialize Retry Loop]
+
+    %% Unified Retry Loop
+    subgraph RetryLoop [Unified Retry Loop]
+        direction TB
+        LoopCond{Attempts <= Max?}
+        LoopCond -- No --> FailExit([Return Failure Message])
+        LoopCond -- Yes --> DelayCheck{Is Retry?}
+        
+        DelayCheck -- Yes --> DoDelay[Wait Configured Delay]
+        DelayCheck -- No --> CacheCheck
+        DoDelay --> CacheCheck
+
+        CacheCheck{Context Cache Enabled?}
+        CacheCheck -- Yes --> TryCache[Request /responses Endpoint]
+        TryCache -- Success --> ValidateCache[Validate Output]
+        TryCache -- Fail --> FallbackChat[Fallback to Chat]
+        CacheCheck -- No --> StandardRequest[Request /chat/completions]
+
+        StandardRequest --> RespCheck{Response OK?}
+        FallbackChat --> RespCheck
+        ValidateCache --> HallucinationCheck
+
+        RespCheck -- Network/JSON Error --> IncRetry[Attempts++]
+        IncRetry --> LoopCond
+
+        RespCheck -- OK --> HallucinationCheck{Hallucination Check?}
+        HallucinationCheck -- "Length > 5x Source" --> LogWarn[Log Warning]
+        LogWarn --> IncRetry
+        HallucinationCheck -- OK --> SuccessBreak[Break Loop]
+    end
+
+    %% Finalization
+    SuccessBreak --> PostProcess[Post-Processing\n(Trim Newlines, RTL Fixes)]
+    PostProcess --> End([Return Translation])
+```
+
+</details>
+
+<br>
+
 ## Built With 🛠
 
 - **AngleScript** – The scripting language used to develop the plugin  
