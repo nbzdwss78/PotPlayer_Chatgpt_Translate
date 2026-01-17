@@ -103,17 +103,18 @@ string LoadInstallerConfig(const string &in key, const string &in installerValue
     if (storedValue == sentinel && fallbackKey != "") {
         string fallbackSentinel = BuildConfigSentinel(fallbackKey);
         string fallbackValue = HostLoadString(fallbackKey, fallbackSentinel);
-        if (fallbackValue != fallbackSentinel)
+        if (fallbackValue != fallbackSentinel && fallbackValue != "")
             return fallbackValue;
     }
-    if (storedValue == sentinel)
+    if (storedValue == sentinel || (storedValue == "" && installerValue != ""))
         return installerValue;
     return storedValue;
 }
 
 void EnsureConfigDefault(const string &in key, const string &in value) {
     string sentinel = BuildConfigSentinel(key);
-    if (HostLoadString(key, sentinel) == sentinel)
+    string stored = HostLoadString(key, sentinel);
+    if (stored == sentinel || (stored == "" && value != ""))
         HostSaveString(key, value);
 }
 
