@@ -333,6 +333,10 @@ string ServerLogin(string User, string Pass) {
         GPT_small_model = smallModelToken;
     if (halluToken != "")
         GPT_check_hallucination = halluToken;
+    
+    if (userModel == "")
+        userModel = GPT_selected_model;
+
     if (userModel == "") {
         errorAccum += "Model name not entered. Please enter a valid model name.\n";
         return errorAccum;
@@ -343,8 +347,15 @@ string ServerLogin(string User, string Pass) {
         while (apiUrlLocal != "" && apiUrlLocal.substr(apiUrlLocal.length()-1, 1) == "/")
             apiUrlLocal = apiUrlLocal.substr(0, apiUrlLocal.length()-1);
     } else {
-        apiUrlLocal = GPT_pre_apiUrl;
+        apiUrlLocal = GPT_apiUrl;
     }
+
+    if (Pass == "")
+        Pass = GPT_api_key;
+
+    if (string(Pass).MakeLower() == "nullkey")
+        allowNullApiKey = true;
+
     if (!allowNullApiKey && Pass == "") {
         errorAccum += "API Key not configured. Please enter a valid API Key.\n";
         return errorAccum;
