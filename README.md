@@ -3,7 +3,7 @@
 
 - 前段时间存储库消失是因为GitHub给我封号了
 
-- https://www.bilibili.com/video/BV1dwrHBdEyq/
+- 【PotPlayer AI翻译插件安装教程-哔哩哔哩】 https://b23.tv/ntF2dxu
 
 
 <a id="readme-top"></a>
